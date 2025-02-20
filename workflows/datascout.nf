@@ -105,6 +105,7 @@ workflow DATASCOUT{
 
         DOWNLOAD_FASTQ_FILES(
             ena_metadata_grouped,
+	    1,
             params.max_runs
         )
 
