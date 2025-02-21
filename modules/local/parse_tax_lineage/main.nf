@@ -10,6 +10,7 @@ process TAX_LINEAGE {
     input:
       tuple val(meta), val(taxid)
       val(taxdump)
+      val(db_path)
     
     output:
       tuple val(meta), file("*_tax_ranks.tsv"), emit: tax_ranks
@@ -17,7 +18,8 @@ process TAX_LINEAGE {
     script:
     prefix = meta.id
     """
-    parse_tax_lineage.py --taxid ${taxid} --output ${prefix}_tax_ranks.tsv --taxdump "${taxdump}"
+    cp -r ${db_path} ./
+    parse_tax_lineage.py --taxid ${taxid} --output ${prefix}_tax_ranks.tsv --taxdump "${taxdump}" --db_path ./.etetoolkit/taxa.sqlite
     """
 }
 

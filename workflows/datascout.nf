@@ -53,7 +53,7 @@ include { SOURMASH                   } from "../subworkflows/local/sourmash_filt
 workflow DATASCOUT{
 
     // get taxonomy lineage 
-    TAX_LINEAGE(input.taxid, params.taxdump)
+    TAX_LINEAGE(input.taxid, params.taxdump, params.db_path)
     taxa_ch = TAX_LINEAGE.out.tax_ranks
 
     // query databases for supporting proteins and rnas
@@ -105,7 +105,7 @@ workflow DATASCOUT{
 
         DOWNLOAD_FASTQ_FILES(
             ena_metadata_grouped,
-	    1,
+	        1,
             params.max_runs
         )
 
