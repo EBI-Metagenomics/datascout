@@ -21,7 +21,6 @@ def parse_taxa(taxa_file):
             data = line.rstrip().split('\t')
             #   rank: taxid
             tax_dict[data[1]] = data[0]
-            print(tax_dict)
     return tax_dict
 
 import logging
