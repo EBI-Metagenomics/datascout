@@ -3,7 +3,7 @@ process SOURMASH_SKETCH_FASTQ {
     container 'quay.io/biocontainers/sourmash:4.8.14--hdfd78af_0'
 
     debug true
-    label "process_high"
+    label "process_long"
 
     tag "${meta}"
 

@@ -27,7 +27,7 @@ def parse_taxa(taxa_file):
         for line in taxa:
             data = line.rstrip().split('\t')
             #   rank: taxid
-            tax_dict[data[1]] = data[2]
+            tax_dict[data[1]] = data[0]
     return tax_dict
 
 def build_query(taxid, evidence_level):
@@ -68,7 +68,7 @@ def query_uniprot(taxa_dict, output_dir, preferred_rank=None, preferred_evidence
             logging.info(f"No uniprot data found at the preferred rank {preferred_rank} with taxid {taxid}")
             return None
 
-    for rank, taxid in taxa_dict.items():
+    for taxid, rank in taxa_dict.items():
         logging.info(f"Searching UniProt entries for taxid {taxid}")
         response = build_query(taxid, preferred_evidence)
         if response.status_code == 200:

@@ -21,7 +21,11 @@ process SOURMASH_GATHER {
 
     script:
     """
-    sourmash gather ${genome_sig} ${list_of_read_sigs.join(' ')} -o ${meta.id}_sourmash_gather.csv
+    sourmash gather ${genome_sig} ${list_of_read_sigs.join(' ')} -o ${meta.id}_${meta.ena_tax}_sourmash_gather.csv
+    if [[ ! -f "${meta.id}_${meta.ena_tax}_sourmash_gather.csv" ]]; then
+        echo "${meta.id}_${meta.ena_tax} had no matching transcriptomic data. No transcriptomic fastq files will be returned";
+        touch "${meta.id}_${meta.ena_tax}_empty.csv";
+    fi
     """
 }
 

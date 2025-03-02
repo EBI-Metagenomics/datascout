@@ -8,6 +8,8 @@ from itertools import cycle
 
 logging.basicConfig(level=logging.INFO)
 
+MAX_READ_COUNT = 100000000
+
 def get_default_connection_headers():
     return {
         "headers": {
@@ -112,11 +114,14 @@ class EnaMetadata:
             logging.error("Failed to parse API output")
         
         logging.info(f"{len(ena_data)} transcriptomes found at taxid {self.taxid}")
+        if not len(ena_data):
+            return []
+            
         qc_set = []
         for entry in ena_data:
             paired, new_files, new_checksums, new_aspera = check_paired_end(entry['library_layout'], entry['fastq_ftp'], entry['fastq_md5'], entry['fastq_aspera'])
             read_len = calculate_read_length(entry['base_count'], entry['read_count'])
-            if paired and read_len >= 75:
+            if paired and read_len >= 75 and int(entry['read_count']) < MAX_READ_COUNT:
                 if new_files:
                     entry['fastq_ftp'] = new_files
                     entry['fastq_md5'] = new_checksums
@@ -124,8 +129,11 @@ class EnaMetadata:
                 qc_set.append(entry)
 
         logging.info(f"{len(qc_set)} transcriptomes remained at taxid {self.taxid} after QC filters applied")
-        sorted_data = sorted(qc_set, key=lambda x: int(x['base_count']), reverse=True)
+        if not len(qc_set):
+            return []
 
+        sorted_data = sorted(qc_set, key=lambda x: int(x['base_count']), reverse=True)
+        
         grouped = {}
         reordered = []
         for entry in sorted_data:

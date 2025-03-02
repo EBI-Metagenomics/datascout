@@ -17,10 +17,6 @@
                 "description": "GCA accession for submitted genome",
                 "meta" : ["genome_id"]
             },
-            "species_name": {
-                "type": "string",
-                "description": "Genome taxonomy"
-            },
             "taxid": {
                 "type": "integer",
                 "description": "Genome taxid NCBI"
@@ -50,9 +46,14 @@
                 "type": "integer",
                 "description": "Preferred uniprot evidence level",
                 "default": 2
+            },
+            "assembly_file": {
+                "type" : "string",
+                "description": "genome fasta file path if exists",
+                "default" : "default"
             }
             
         },
-        "required": ["genome","species_name", "taxid"]
+        "required": ["sample_id", "genome", "taxid"]
     }
 }

@@ -14,8 +14,7 @@ process RFAM_ACCESSIONS {
     maxRetries 2
 
     input:
-      tuple val(meta), file(tax_ranks)
-      tuple val(meta), val(rank)
+      tuple val(meta), file(tax_ranks), val(rank)
       val(rfam_db)
 
     output:

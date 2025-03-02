@@ -1,4 +1,5 @@
 process NCBI_ORTHODB {
+    maxForks 3
 
     conda "${moduleDir}/biopython_requests.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -15,8 +16,7 @@ process NCBI_ORTHODB {
     maxRetries 2
 
     input:
-      tuple val(meta), file(tax_ranks)
-      tuple val(meta), val(max_rank)
+      tuple val(meta), file(tax_ranks), val(max_rank)
 
     output:
       tuple val(meta), path("${meta.id}_orthodb_dir"), emit: orthodb_results

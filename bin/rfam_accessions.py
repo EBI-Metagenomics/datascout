@@ -14,7 +14,7 @@ def parse_taxa(taxa_file):
         for line in taxa:
             data = line.rstrip().split('\t')
             #   rank: taxa name
-            tax_dict[data[1]] = data[3]
+            tax_dict[data[2]] = data[0]
     return tax_dict
 
 def query_rfam(tax_ranks, config_file_path, preferred_rank=None):
@@ -64,7 +64,7 @@ def query_rfam(tax_ranks, config_file_path, preferred_rank=None):
         data_found = False
 
         while not data_found:
-            for rank, tax_name in tax_ranks.items():
+            for tax_name, rank in tax_ranks.items():
                 if rank != "order":       
                     cursor.execute(families_sql_query, f"%{tax_name}%")
                     rfam_results = {row[0] for row in cursor.fetchall()}

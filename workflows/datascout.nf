@@ -17,14 +17,14 @@ include { samplesheetToList } from 'plugin/nf-schema'
 samplesheet = Channel.fromList(samplesheetToList(params.samplesheet, "${projectDir}/assets/schema_input.json"))
 
 /* split the inputs */
-samplesheet.multiMap {meta, tax_name, taxid, orthodb_tax, uniprot_tax, rfam_tax, uniprot_evidence ->
+samplesheet.multiMap {meta, taxid, orthodb_tax, uniprot_tax, rfam_tax, uniprot_evidence, genome_file ->
     meta: meta
-    tax_name: [ meta, tax_name ]
     taxid: [ meta, taxid ]
     orthodb_tax: [ meta, orthodb_tax ]
     uniprot_tax: [ meta, uniprot_tax ]
     rfam_tax: [ meta, rfam_tax ]
     uniprot_evidence: [ meta, uniprot_evidence ]
+    genome_file: [ meta, genome_file ]
 }.set {
     input
 }
@@ -56,19 +56,25 @@ workflow DATASCOUT{
     TAX_LINEAGE(input.taxid, params.taxdump, params.db_path)
     taxa_ch = TAX_LINEAGE.out.tax_ranks
 
+    // prevent meta getting mixed up
+    joined_orthodb = taxa_ch.join(input.orthodb_tax)
+    joined_uniprot = taxa_ch.join(input.uniprot_tax).join(input.uniprot_evidence)
+    joined_rfam = taxa_ch.join(input.rfam_tax)
+
     // query databases for supporting proteins and rnas
-    NCBI_ORTHODB(taxa_ch, input.orthodb_tax)
-    UNIPROT_DATA(taxa_ch, input.uniprot_tax, input.uniprot_evidence)
-    RFAM_ACCESSIONS(taxa_ch, input.rfam_tax, params.rfam_db)
+    NCBI_ORTHODB(joined_orthodb)
+    UNIPROT_DATA(joined_uniprot)
+    RFAM_ACCESSIONS(joined_rfam, params.rfam_db)
 
     // modify meta
-    genome_ch = input.meta.map { meta ->
+    genome_ch = input.genome_file.map { meta, gf ->
         def new_meta = [ id: meta.genome_id, ena_tax: meta.ena_tax ]
-        return new_meta
+        return [ new_meta, gf ]
     }
 
     // fetch genome fasta file
     GENOME_ASSEMBLY(genome_ch)
+    assembly_ch = GENOME_ASSEMBLY.out.assembly_fa
 
     // fetch ENA metadata
     ENA_RNA_CSV(taxa_ch)
@@ -105,7 +111,7 @@ workflow DATASCOUT{
 
         DOWNLOAD_FASTQ_FILES(
             ena_metadata_grouped,
-	        1,
+	    1,
             params.max_runs
         )
 

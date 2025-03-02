@@ -15,9 +15,7 @@ process UNIPROT_DATA {
     maxRetries 2
 
     input:
-      tuple val(meta), file(tax_ranks)
-      tuple val(meta), val(rank)
-      tuple val(meta), val(evidence)
+      tuple val(meta), file(tax_ranks), val(rank), val(evidence)
 
     output:
       tuple val(meta), path("${meta.id}_uniprot_dir"), emit: uniprot_results

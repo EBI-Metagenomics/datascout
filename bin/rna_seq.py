@@ -7,6 +7,9 @@ import csv
 
 logging.basicConfig(level=logging.INFO)
 
+#check if we need to include thse after sourmash
+#MAX_NB_SAME_DESCRIPTORS = 6
+#MAX_NB_TOTAL_FILES = 3
 #check which descriptor is used - sample name in this case
 #check if filtering of descripions for RNAs is needed
 
@@ -17,31 +20,32 @@ def parse_taxa(taxa_file):
         for line in taxa:
             data = line.rstrip().split('\t')
             #   rank: taxid
-            tax_dict[data[1]] = data[2]
+            tax_dict[data[1]] = data[0]
+            print(tax_dict)
     return tax_dict
 
-def find_transcriptome_data(tax_ranks, preferred_rank = False):
-    """use preferred rank if given by user. Circle through taxa until transcriptome data is found"""
+import logging
+import query_ena_transcriptome
+
+def find_transcriptome_data(tax_ranks, preferred_rank=False):
+    """Use preferred rank if given by user. Iterate through taxa until transcriptome data is found."""
+    
     if preferred_rank:
-        taxid = tax_ranks[preferred_rank]
+        taxid = tax_ranks.get(preferred_rank)  # Avoid KeyError with .get()
         ena = query_ena_transcriptome.EnaMetadata(taxid)
+        transciptome_metadata = ena.query_ena()
         if len(transciptome_metadata):
-            transciptome_metadata = ena.query_ena()
             return transciptome_metadata
         else:
             logging.info(f"No transcriptome data found at the preferred rank {preferred_rank}")
-            return None
 
-    data_found = False
-    for rank, taxid in tax_ranks.items():
-        while not data_found:
-            ena = query_ena_transcriptome.EnaMetadata(taxid)
-            transciptome_metadata = ena.query_ena()
-            if len(transciptome_metadata):
-                data_found = True
-                return transciptome_metadata
-            
-    logging.info(f"No transcriptome data found at any taxonomic rank")
+    for taxid, rank in tax_ranks.items():
+        ena = query_ena_transcriptome.EnaMetadata(taxid)
+        transciptome_metadata = ena.query_ena()
+        if transciptome_metadata:
+            return transciptome_metadata
+
+    logging.info("No transcriptome data found at any taxonomic rank")
     return None
 
 if __name__ == "__main__":

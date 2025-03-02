@@ -21,9 +21,9 @@ SEARCH_URL_ARGS = {
     "singlecopy": "0.9",
     "take": "5000"
 }
-MAX_NB_QUERIES_PER_BLOCK = 200
-NUM_JOBS = 96 # no of simultaneous runs
-WAIT = 5
+MAX_NB_QUERIES_PER_BLOCK = 50
+NUM_JOBS = 50 # no of simultaneous runs
+WAIT = 10
 
 
 def parse_taxa(taxa_file):
@@ -33,7 +33,7 @@ def parse_taxa(taxa_file):
         for line in taxa:
             data = line.rstrip().split('\t')
             #   rank: taxid
-            tax_dict[data[1]] = data[2]
+            tax_dict[data[1]] = data[0]
     return tax_dict
 
 def get_orthodb_data(taxa_dict, max_lineage=None):
@@ -42,7 +42,7 @@ def get_orthodb_data(taxa_dict, max_lineage=None):
     logging.info("Getting OrthoDB data")
     clusters = []
 
-    for rank, taxid in taxa_dict.items():
+    for taxid, rank in taxa_dict.items():
         data_found = False 
         query_terms = SEARCH_URL_ARGS.copy()
         query_terms.update(
@@ -163,27 +163,29 @@ def main():
 
     taxa_dict = parse_taxa(args.tax_file)
     clusters = get_orthodb_data(taxa_dict, max_lineage)
-    
-    # Chop the data in small blocks and query them with a wait intervall to avoid spaming orthoDB
-    num_clusters = len(clusters)
-    start = 0
-    end = MAX_NB_QUERIES_PER_BLOCK
 
-    while start < num_clusters:
-        groups = clusters[start:end]
-        start = end
-        end = min(end + MAX_NB_QUERIES_PER_BLOCK, num_clusters)
-        logging.info(f"Fetching sequences for cluster {start} to {end}")
-        parallelize_jobs(groups)
-
-        time.sleep(WAIT)
-    
     os.makedirs(args.output_dir, exist_ok=True)
-    taxa_folders = glob.glob("*_sequences")
-    for folder in taxa_folders:
-        taxid = str(folder).split('_')[0]
-        create_combined_fa(taxid, folder)
-        shutil.move(folder, os.path.join(args.output_dir, folder))
+
+    if clusters:
+    # Chop the data in small blocks and query them with a wait intervall to avoid spaming orthoDB
+        num_clusters = len(clusters)
+        start = 0
+        end = MAX_NB_QUERIES_PER_BLOCK
+
+        while start < num_clusters:
+            groups = clusters[start:end]
+            start = end
+            end = min(end + MAX_NB_QUERIES_PER_BLOCK, num_clusters)
+            logging.info(f"Fetching sequences for cluster {start} to {end}")
+            parallelize_jobs(groups)
+
+            time.sleep(WAIT)
+        
+        taxa_folders = glob.glob("*_sequences")
+        for folder in taxa_folders:
+            taxid = str(folder).split('_')[0]
+            create_combined_fa(taxid, folder)
+            shutil.move(folder, os.path.join(args.output_dir, folder))
     
 if __name__ == "__main__":
     main()

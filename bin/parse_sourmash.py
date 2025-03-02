@@ -33,8 +33,8 @@ if __name__ == "__main__":
     containment, runs = parse_containment(args.sourmash)
     print(containment)
 
-    with open(args.output_file, 'w') as matching_runs:
-        for run in runs:
-            matching_runs.write(f"{run.split('.')[0]}\n")
-
+    if len(runs):
+        with open(args.output_file, 'w') as matching_runs:
+            for run in runs:
+                matching_runs.write(f"{run.split('.')[0]}\n")
 

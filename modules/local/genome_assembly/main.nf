@@ -1,4 +1,5 @@
 process GENOME_ASSEMBLY {
+    maxForks 1
 
     conda "${moduleDir}/biopython_requests.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -12,17 +13,21 @@ process GENOME_ASSEMBLY {
     tag "${meta}"
 
     errorStrategy  'retry'
-    maxRetries 2
+    maxRetries 3
 
     input:
-    val(meta)
+    tuple val(meta), path(genome_file)
 
     output:
     tuple val(meta), path ("*_reheaded_assembly.fasta"), emit: assembly_fa
 
     script:
     """
-    genome_assembly.py ${meta.id}
+    genome_assembly.py --genome_id ${meta.id} --genome_file ${genome_file}
+    
+    if [[ ! -s "${meta.id}_reheaded_assembly.fasta" ]]; then
+        rm -rf "${meta.id}_reheaded_assembly.fasta";
+    fi
     """
 }
 

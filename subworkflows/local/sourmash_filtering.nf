@@ -7,6 +7,7 @@ include { SOURMASH_GATHER            } from "../../modules/local/sourmash_gather
 include { GET_CONTAINMENT            } from "../../modules/local/get_containment/main.nf"
 include { PUBLISH_RUNS               } from "../../modules/local/publish_runs/main.nf"
 
+
 workflow SOURMASH {
 
     take:
@@ -52,38 +53,43 @@ workflow SOURMASH {
         signatures_ch
     )
 
-    GET_CONTAINMENT(
-        SOURMASH_GATHER.out.gather_csv
-    )
+    def gather_output = SOURMASH_GATHER.out.gather_csv
+    def fastq_files_output = Channel.empty()
+
+    gather_output_filtered = gather_output.filter { meta, file ->
+        !file.name.contains('_empty.csv') 
+    }
+
+    GET_CONTAINMENT(gather_output_filtered)
 
     keep_runs_ch = GET_CONTAINMENT.out.keep_runs
 
-    // read run ids from file into a list
-    keep_runs_list_ch = keep_runs_ch
-        .map { run_data -> 
-            def meta = run_data[0]
-            def runs = run_data[1]  // txt file
-            def run_ids = runs.readLines().collect { it.trim() }.toList()  // store as list
-            return [meta, run_ids] 
+    containment_output_filtered = keep_runs_ch.filter { meta, file ->
+        !file.name.contains('empty') 
     }
 
-    // get run files which include run id
-    filtered_fastq_ch = fastq_files_ch.join(keep_runs_list_ch)
-    .map { meta, fastq_files, runs ->  
-
-        def filtered_files = fastq_files.findAll { fq_path -> 
-            def base_name = fq_path.getFileName().toString().split('_')[0]
-            
-            runs.any { id -> base_name == id } 
+    keep_runs_list_ch = containment_output_filtered
+        .map { run_data -> 
+            def meta = run_data[0]
+            def runs = run_data[1]  
+            def run_ids = runs.readLines().collect { it.trim() }.toList()
+            return [meta, run_ids] 
         }
 
+    filtered_fastq_ch = fastq_files_ch.join(keep_runs_list_ch)
+    .map { meta, fastq_files, runs ->  
+        def filtered_files = fastq_files.findAll { fq_path -> 
+            def base_name = fq_path.getFileName().toString().split('_')[0]
+            runs.any { id -> base_name == id } 
+        }
         return tuple(meta, filtered_files)
     }
 
     PUBLISH_RUNS(filtered_fastq_ch)
 
-    emit:
-    sourmash        = SOURMASH_GATHER.out.gather_csv
-    fastq_files     = PUBLISH_RUNS.out.fastq_files
+    fastq_files_output = PUBLISH_RUNS.out.fastq_files
 
+    emit:
+    sourmash    = SOURMASH_GATHER.out.gather_csv
+    fastq_files = fastq_files_output
 }

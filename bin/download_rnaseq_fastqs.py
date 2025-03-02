@@ -20,8 +20,8 @@ def chunk_ena_csv(csv_file, start, numlines):
     return dictionary fastq_path: fastq_checksum
     """
     df = pd.read_csv(csv_file, usecols=["run_accession", "fastq_ftp", "fastq_md5"])
-    start_line = start - 1
-    end_line = start_line + numlines
+    start_line = max(0, start - 1)
+    end_line = min(start_line + numlines, len(df))
     subset_df = df.iloc[start_line:end_line]
     dict_df = dict(zip(subset_df['fastq_ftp'], subset_df['fastq_md5']))
     files_for_download = {}

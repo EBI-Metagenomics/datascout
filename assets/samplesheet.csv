@@ -1,3 +1,3 @@
-sample_id,genome,species_name,taxid,orthodb,uniprot,rfam,ena,uniprot_evidence
-test_sample1,GCA_003719455.1,Trypanosoma cruzi,5693,,,,,,
-test_sample2,GCA_003719455.1,Trypanosoma cruzi,5693,,family,,,,3
+sample_id,genome,taxid,orthodb,uniprot,rfam,ena,uniprot_evidence,assembly_file
+test_sample1,GCA_003719455.1,5693,,,,,,,
+test_sample2,GCA_003719455.1,5693,,family,,,,3,

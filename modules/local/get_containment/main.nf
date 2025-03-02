@@ -6,7 +6,6 @@ process GET_CONTAINMENT {
         'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/19/196beb70d2a47fe84cb163297905a7dab5ebaee0e583f0fc39fd283a94bda028/data' :
         'community.wave.seqera.io/library/python_pip_pandas:7de8af9201842540' }"
 
-    publishDir "${params.output}", mode: "copy"
     debug true
     label "process_low"
 
@@ -19,12 +18,16 @@ process GET_CONTAINMENT {
       tuple val(meta), path(sourmash_file)
 
     output:
-      tuple val(meta), path("runs.txt"), emit: keep_runs
+      tuple val(meta), path("*runs.txt"), emit: keep_runs
 
 
     script:
     """
     parse_sourmash.py --sourmash ${sourmash_file} --output_file runs.txt
+    
+    if [[ ! -f runs.txt ]]; then
+        echo "${meta.id} had no matching transcriptomic data after filtering." 
+        touch empty_runs.txt
+    fi
     """
 }
-
