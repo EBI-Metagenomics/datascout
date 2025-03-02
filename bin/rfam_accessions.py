@@ -46,7 +46,7 @@ def query_rfam(tax_ranks, config_file_path, preferred_rank=None):
         """
 
         if preferred_rank:
-            tax_name = tax_ranks.get(preferred_rank)
+            tax_name = next((name for name, rank in tax_ranks.items() if rank == preferred_rank), None)
             cursor.execute(families_sql_query, f"%{tax_name}%")
             results = cursor.fetchall()
             if not results:

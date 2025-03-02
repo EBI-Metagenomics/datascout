@@ -31,7 +31,7 @@ def find_transcriptome_data(tax_ranks, preferred_rank=False):
     """Use preferred rank if given by user. Iterate through taxa until transcriptome data is found."""
     
     if preferred_rank:
-        taxid = tax_ranks.get(preferred_rank)  # Avoid KeyError with .get()
+        taxid = next((taxid for taxid, rank in tax_ranks.items() if rank == preferred_rank), None)
         ena = query_ena_transcriptome.EnaMetadata(taxid)
         transciptome_metadata = ena.query_ena()
         if len(transciptome_metadata):

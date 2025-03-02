@@ -57,7 +57,7 @@ def query_uniprot(taxa_dict, output_dir, preferred_rank=None, preferred_evidence
     logging.info("Getting UniProt data")
 
     if preferred_rank:
-        taxid = taxa_dict[preferred_rank]
+        taxid = next((taxid for taxid, rank in taxa_dict.items() if rank == preferred_rank), None)
         response = build_query(taxid, preferred_evidence)
         if response.status_code == 200:
             uniprot_fasta_file = os.path.join(output_dir, f"{taxid}_uniprot_raw.faa")
