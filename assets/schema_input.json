@@ -50,7 +50,6 @@
             "assembly_file": {
                 "type" : "string",
                 "description": "genome fasta file path if exists",
-                "default" : "default"
             }
             
         },

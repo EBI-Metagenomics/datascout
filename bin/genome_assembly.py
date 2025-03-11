@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import requests
 import logging
 from Bio import SeqIO
@@ -39,9 +40,9 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    if args.genome_file == "default":
-        genome_file = None
-    else:
+    if args.genome_file:
         genome_file = args.genome_file
+    else:
+        genome_file = None
 
     query_ena(args.genome_id, genome_file)

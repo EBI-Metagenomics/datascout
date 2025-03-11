@@ -23,8 +23,12 @@ process GENOME_ASSEMBLY {
 
     script:
     """
-    genome_assembly.py --genome_id ${meta.id} --genome_file ${genome_file}
-    
+    if [[ "${genome_file}" == "" ]]; then
+        genome_assembly.py --genome_id ${meta.id}
+    else
+        genome_assembly.py --genome_id ${meta.id} -f ${genome_file}
+    fi
+
     if [[ ! -s "${meta.id}_reheaded_assembly.fasta" ]]; then
         rm -rf "${meta.id}_reheaded_assembly.fasta";
     fi
