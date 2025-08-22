@@ -12,8 +12,7 @@ process SOURMASH_GATHER {
     maxRetries 2
 
     input:
-      tuple val(meta), path(genome_sig)
-      tuple val(meta), path(list_of_read_sigs)
+      tuple val(meta), path(genome_sig), path(list_of_read_sigs)
 
     output:
       tuple val(meta), path("*.csv"), emit: gather_csv

@@ -10,7 +10,7 @@ process SOURMASH_SKETCH {
       tuple val(meta), path(fastq_file_forward), path(fastq_file_reverse)
 
     output:
-      tuple val(meta), path(fastq_sketch), emit: fastq_sketch
+      tuple val(meta), path("${meta.run_id}.sig"), emit: fastq_sketch
 
     script:
     """
