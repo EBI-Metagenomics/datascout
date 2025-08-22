@@ -1,6 +1,6 @@
 process RFAM_ACCESSIONS {
 
-    conda "./rfam_accessions.yml"
+    conda "./environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/4f/4fe75ceed4e54cac511cb591843ec3fe0016b9d2f996fcbc639b2289f886e5de/data' :
         'community.wave.seqera.io/library/python_pip_pymysql:0b6be43d90920e61' }"
