@@ -7,10 +7,10 @@ process SOURMASH_SKETCH {
     maxRetries 2
 
     input:
-      tuple val(meta), file(fastq_file_forward), file(fastq_file_reverse)
+      tuple val(meta), path(fastq_file_forward), path(fastq_file_reverse)
 
     output:
-      tuple val(meta), file(fastq_sketch), emit: fastq_sketch
+      tuple val(meta), path(fastq_sketch), emit: fastq_sketch
 
     script:
     """

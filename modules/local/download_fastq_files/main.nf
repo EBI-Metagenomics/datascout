@@ -15,7 +15,7 @@ process DOWNLOAD_FASTQ_FILES {
     maxRetries 2
 
     input:
-      tuple val(meta), file(ena_metadata)
+      tuple val(meta), path(ena_metadata)
       val(start_line)
       val(num_lines)
 

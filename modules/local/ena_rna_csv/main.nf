@@ -14,9 +14,9 @@ process ENA_RNA_CSV {
 
     errorStrategy 'retry'
     maxRetries 2
-    
+
     input:
-      tuple val(meta), file(tax_ranks)
+      tuple val(meta), path(tax_ranks)
 
     output:
     tuple val(meta), path("${meta.genome_id}_ENA_filtered_rna.csv"), emit: rna_csv

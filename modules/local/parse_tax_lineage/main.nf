@@ -1,7 +1,7 @@
 process TAX_LINEAGE {
 
     container 'quay.io/biocontainers/ete3:3.1.2'
-        
+
     publishDir "${params.output}", mode: 'copy', pattern: "*tax_ranks.tsv"
     label "process_medium"
 
@@ -11,10 +11,10 @@ process TAX_LINEAGE {
       tuple val(meta), val(taxid)
       val(taxdump)
       val(db_path)
-    
+
     output:
-      tuple val(meta), file("*_tax_ranks.tsv"), emit: tax_ranks
-    
+      tuple val(meta), path("*_tax_ranks.tsv"), emit: tax_ranks
+
     script:
     prefix = meta.id
     """
