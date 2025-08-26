@@ -15,6 +15,7 @@ logging.basicConfig(level=logging.INFO)
 #   set all requests static params beforehand
 PARSE_URL = "https://data.orthodb.org/current/fasta?"
 SEARCH_URL = "https://data.orthodb.org/current/search?"
+VERSION_URL = "https://data.orthodb.org/v12/orthodb_release_id"
 
 SEARCH_URL_ARGS = {
     "universal": "0.9",
@@ -154,7 +155,15 @@ def main():
     parser.add_argument(
         "-o", "--output_dir", type=str, help="output directory"
     )
+    parser.add_argument(
+        "--version", action='version', action="store_true", help="Show orthodb version number and exit"
+    )
     args = parser.parse_args()
+
+    if args.version:
+        version = requests.get(VERSION_URL)
+        print(version.text.strip())
+        exit(0)
 
     if args.lineage_max == "default":
         max_lineage = None
