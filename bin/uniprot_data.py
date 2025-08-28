@@ -99,6 +99,20 @@ def reformat_fasta(fasta_path, output_dir, taxid):
                 outfile.write(f"{str(entry.seq)}\n")
                 uniprot_ids.add(seq_id)
 
+def get_uniprot_version():
+    """Fetch UniProt release version and date from headers"""
+    response = requests.get(
+        URL,
+        params={"query": "taxonomy_id:9606", "format": "fasta", "size":0},  
+        stream=True,
+    )
+    if response.status_code == 200:
+        release = response.headers.get("X-UniProt-Release", "unknown")
+        return release
+    else:
+        raise RuntimeError(f"Failed to fetch UniProt version (status {response.status_code})")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Fetch data from orthodb")
     parser.add_argument(
@@ -113,7 +127,15 @@ def main():
     parser.add_argument(
         "-r", "--rank", type=str, help="Preferred taxonomic rank to search for proteins", required=False 
     )
+    parser.add_argument(
+        "--version", action="store_true"
+    )
     args = parser.parse_args()
+
+    if args.version:
+        version = get_uniprot_version()
+        print(f"UniProt: {version}")
+        exit
 
     os.makedirs(args.output_dir, exist_ok=True)
     if args.rank == "default":

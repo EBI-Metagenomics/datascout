@@ -19,11 +19,17 @@ process UNIPROT_DATA {
 
     output:
       tuple val(meta), path("${meta.id}_uniprot_dir"), emit: uniprot_results
+      path "versions.yml", emit: versions
 
     script:
     """
     mkdir -p ${meta.id}_uniprot_dir
     uniprot_data.py --tax_file ${tax_ranks} --output "${meta.id}_uniprot_dir" --rank ${rank} --evidence ${evidence}
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        \$( uniprot_data.py --tax_file ${tax_ranks} --output "${meta.id}_uniprot_dir" --version 2>&1 )
+    END_VERSIONS
     """
 }
 
