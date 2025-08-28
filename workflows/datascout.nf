@@ -69,7 +69,7 @@ workflow DATASCOUT {
         NCBI_ORTHODB(joined_orthodb)
         ch_versions = ch_versions.mix(NCBI_ORTHODB.out.versions)
 
-        UNIPROT_DATA(joined_uniprot)
+        UNIPROT_DATA(joined_uniprot, params.swissprot ?: false)
         ch_versions = ch_versions.mix(UNIPROT_DATA.out.versions)
 
         RFAM_ACCESSIONS(joined_rfam, params.rfam_db)

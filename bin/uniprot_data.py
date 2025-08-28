@@ -19,7 +19,6 @@ evidence_1 = "existence:1"
 evidence_2 = "existence:1 OR existence:2"
 evidence_3 = "existence:1 OR existence:2 OR existence:3"
 
-
 def parse_taxa(taxa_file):
     logging.info("Parsing taxa lineages from file")
     tax_dict = {}
@@ -30,7 +29,7 @@ def parse_taxa(taxa_file):
             tax_dict[data[1]] = data[0]
     return tax_dict
 
-def build_query(taxid, evidence_level):
+def build_query(taxid, evidence_level, swissprot_only=False):
     if evidence_level == '1':
         query = f"(taxonomy_id={taxid} AND ({evidence_1}))"
     elif evidence_level == '2':
@@ -41,6 +40,9 @@ def build_query(taxid, evidence_level):
     else:
         query = f"(taxonomy_id={taxid} AND ({evidence_2}))"
     
+    if swissprot_only:
+        query += " AND (reviewed:true)"
+
     params = SEARCH_URL_ARGS.copy()
     params["query"] = query
 
@@ -51,14 +53,14 @@ def build_query(taxid, evidence_level):
         print(f"An unexpected error occurred: {e}")
         raise
 
-def query_uniprot(taxa_dict, output_dir, preferred_rank=None, preferred_evidence=None):
+def query_uniprot(taxa_dict, output_dir, preferred_rank=None, preferred_evidence=None, swissprot_only=False):
     """query uniprot per taxonmic rank. Stop when non-empty result 
     is returned. Use rank if provided by user"""
     logging.info("Getting UniProt data")
 
     if preferred_rank:
         taxid = next((taxid for taxid, rank in taxa_dict.items() if rank == preferred_rank), None)
-        response = build_query(taxid, preferred_evidence)
+        response = build_query(taxid, preferred_evidence, swissprot_only)
         if response.status_code == 200:
             uniprot_fasta_file = os.path.join(output_dir, f"{taxid}_uniprot_raw.faa")
             with open(uniprot_fasta_file, 'wb') as outfile:
@@ -70,7 +72,7 @@ def query_uniprot(taxa_dict, output_dir, preferred_rank=None, preferred_evidence
 
     for taxid, rank in taxa_dict.items():
         logging.info(f"Searching UniProt entries for taxid {taxid}")
-        response = build_query(taxid, preferred_evidence)
+        response = build_query(taxid, preferred_evidence, swissprot_only)
         if response.status_code == 200:
             uniprot_fasta_file = os.path.join(output_dir, f"{taxid}_uniprot_raw.faa")
             with open(uniprot_fasta_file, 'wb') as outfile:
@@ -128,6 +130,9 @@ def main():
         "-r", "--rank", type=str, help="Preferred taxonomic rank to search for proteins", required=False 
     )
     parser.add_argument(
+        "--swissprot_only", action="store_true", help="Search only SwissProt reviewed entries", default=False
+    )
+    parser.add_argument(
         "--version", action="store_true"
     )
     args = parser.parse_args()
@@ -143,7 +148,7 @@ def main():
     else:
         rank = args.rank
     taxa_dict = parse_taxa(args.tax_file)
-    raw_file_path, taxid = query_uniprot(taxa_dict, args.output_dir, rank, args.evidence)
+    raw_file_path, taxid = query_uniprot(taxa_dict, args.output_dir, rank, args.evidence, args.swissprot_only)
     reformat_fasta(raw_file_path, args.output_dir, taxid)
 
 

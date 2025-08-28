@@ -16,15 +16,17 @@ process UNIPROT_DATA {
 
     input:
       tuple val(meta), path(tax_ranks), val(rank), val(evidence)
+      val(swissprot)
 
     output:
       tuple val(meta), path("${meta.id}_uniprot_dir"), emit: uniprot_results
       path "versions.yml", emit: versions
 
     script:
+    def swissprot_arg = swissprot ? '--swissprot_only' : ''
     """
     mkdir -p ${meta.id}_uniprot_dir
-    uniprot_data.py --tax_file ${tax_ranks} --output "${meta.id}_uniprot_dir" --rank ${rank} --evidence ${evidence}
+    uniprot_data.py --tax_file ${tax_ranks} --output "${meta.id}_uniprot_dir" --rank ${rank} --evidence ${evidence} ${swissprot_arg}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -32,5 +34,3 @@ process UNIPROT_DATA {
     END_VERSIONS
     """
 }
-
-// Get proteins from uniprot and reformat headers
