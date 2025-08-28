@@ -35,6 +35,8 @@ workflow SOURMASH {
         .set { paired_fastq_files }
 
     SOURMASH_SKETCH_FASTQ(paired_fastq_files)
+    ch_versions = SOURMASH_SKETCH_FASTQ.out.versions
+
     SOURMASH_SKETCH_GENOME(genome)
 
     SOURMASH_SKETCH_FASTQ.out.sketch
@@ -86,4 +88,5 @@ workflow SOURMASH {
     emit:
     sourmash    = SOURMASH_GATHER.out.gather_csv
     fastq_files = PUBLISH_RUNS.out.fastq_files
+    versions    = ch_versions
 }

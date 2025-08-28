@@ -26,18 +26,21 @@ include { ENA_RNA_CSV                } from "../modules/local/ena_rna_csv/main.n
 include { DOWNLOAD_FASTQ_FILES       } from "../modules/local/download_fastq_files/main.nf"
 include { PUBLISH_RUNS               } from "../modules/local/publish_runs/main.nf"
 include { SOURMASH                   } from "../subworkflows/local/sourmash_filtering.nf"
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-
 workflow DATASCOUT {
 
     main:
     
         log.info paramsSummaryLog(workflow)
+
+        // Initialize versions channel
+        ch_versions = Channel.empty()
 
         Channel
             .fromList(samplesheetToList(params.samplesheet, "${projectDir}/assets/schema_input.json"))
@@ -55,6 +58,7 @@ workflow DATASCOUT {
         // get taxonomy lineage 
         TAX_LINEAGE(input.taxid, params.taxdump, params.db_path)
         TAX_LINEAGE.out.tax_ranks.set { taxa_ch }
+        ch_versions = ch_versions.mix(TAX_LINEAGE.out.versions)
 
         // prevent meta getting mixed up
         taxa_ch.join(input.orthodb_tax).set { joined_orthodb }
@@ -63,8 +67,13 @@ workflow DATASCOUT {
 
         // query databases for supporting proteins and rnas
         NCBI_ORTHODB(joined_orthodb)
+        ch_versions = ch_versions.mix(NCBI_ORTHODB.out.versions)
+
         UNIPROT_DATA(joined_uniprot)
+        ch_versions = ch_versions.mix(UNIPROT_DATA.out.versions)
+
         RFAM_ACCESSIONS(joined_rfam, params.rfam_db)
+        ch_versions = ch_versions.mix(RFAM_ACCESSIONS.out.versions)
 
         // modify meta
         input.genome_file
@@ -109,6 +118,7 @@ workflow DATASCOUT {
                 1,
                 params.max_runs
             )
+            ch_versions = ch_versions.mix(SOURMASH.out.versions)
         }
 
         else {
@@ -121,6 +131,15 @@ workflow DATASCOUT {
 
             PUBLISH_RUNS(DOWNLOAD_FASTQ_FILES.out.fastq_files)
         }
+
+        // Collect and concatenate all versions
+        ch_versions
+            .collectFile(
+                name: 'software_versions.yml',
+                keepHeader: true,
+                sort: true,
+                storeDir: "${params.outdir}/pipeline_info"
+            )
 }
 
 // /*
