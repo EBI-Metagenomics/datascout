@@ -19,11 +19,17 @@ process RFAM_ACCESSIONS {
 
     output:
       tuple val(meta), path("${meta.id}_rfam_dir"), emit: rfam_results
+      path("versions.yml"), emit: versions
 
     script:
     """
     mkdir -p ${meta.id}_rfam_dir
     rfam_accessions.py --tax_file ${tax_ranks} --output_dir "${meta.id}_rfam_dir" --rank ${rank} --config ${rfam_db}
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        \$( rfam_accessions.py --tax_file ${tax_ranks} --output_dir "${meta.id}_rfam_dir" --rank ${rank} --config ${rfam_db} --version 2>&1 )
+    END_VERSIONS
     """
 }
 
