@@ -15,11 +15,17 @@ process SOURMASH_SKETCH_FASTQ {
 
     output:
       tuple val(meta), path("*.sig"), emit: sketch
+      path("versions.yml"), emit: versions
 
 
     script:
     """
     sourmash sketch dna -p k=31,abund ${forward_file} ${reverse_file} --merge ${meta.run_id} -o ${meta.run_id}.sig
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        Sourmash: \$( sourmash --version 2>&1 | cut -d' ' -f2 )
+    END_VERSIONS
     """
 }
 
