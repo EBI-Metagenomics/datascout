@@ -57,13 +57,13 @@ workflow SOURMASH {
     SOURMASH_GATHER(gather_input_ch)
 
     SOURMASH_GATHER.out.gather_csv
-        .filter { meta, file -> !file.name.contains('_empty.csv') }
+        .filter { _meta, file -> !file.name.contains('_empty.csv') }
         .set { gather_output_filtered }
 
     GET_CONTAINMENT(gather_output_filtered)
 
     GET_CONTAINMENT.out.keep_runs
-        .filter { meta, file -> !file.name.contains('empty') }
+        .filter { _meta, file -> !file.name.contains('empty') }
         .map { run_data -> 
             def meta = run_data[0]
             def runs = run_data[1]  

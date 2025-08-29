@@ -56,7 +56,7 @@ workflow DATASCOUT {
             .set { input }
 
         // get taxonomy lineage 
-        TAX_LINEAGE(input.taxid, params.taxdump, params.db_path)
+        TAX_LINEAGE(input.taxid, params.taxdump, params.sqlite)
         TAX_LINEAGE.out.tax_ranks.set { taxa_ch }
         ch_versions = ch_versions.mix(TAX_LINEAGE.out.versions)
 
