@@ -7,7 +7,7 @@ process ENA_RNA_CSV {
         'community.wave.seqera.io/library/python_pip_biopython_requests:725bda83fb97ec48' }"
 
     debug true
-    publishDir "${params.output}", mode: "copy"
+    publishDir "${params.outdir}", mode: "copy"
     label 'process_medium'
 
     tag "${meta}"

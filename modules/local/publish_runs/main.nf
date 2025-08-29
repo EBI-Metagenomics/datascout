@@ -2,7 +2,7 @@
 process PUBLISH_RUNS {
 
     debug true
-    publishDir "${params.output}", mode: "copy"
+    publishDir "${params.outdir}", mode: "copy"
     label 'process_low'
 
     tag "${meta}"

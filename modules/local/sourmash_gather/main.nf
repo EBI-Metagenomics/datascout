@@ -2,7 +2,7 @@
 process SOURMASH_GATHER {
     container 'quay.io/biocontainers/sourmash:4.8.14--hdfd78af_0'
 
-    publishDir "${params.output}", mode: "copy"
+    publishDir "${params.outdir}", mode: "copy"
     debug true
     label "process_high"
 

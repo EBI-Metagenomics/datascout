@@ -11,7 +11,7 @@ process NCBI_ORTHODB {
 // community.wave.seqera.io/library/orthodb_pip_biopython:062c151d7c57397d
 
     debug true
-    publishDir "${params.output}", mode: "copy"
+    publishDir "${params.outdir}", mode: "copy"
     label "process_medium"
 
     tag "${meta}"
