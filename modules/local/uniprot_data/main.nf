@@ -30,7 +30,7 @@ process UNIPROT_DATA {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        \$( uniprot_data.py --tax_file ${tax_ranks} --output "${meta.id}_uniprot_dir" --version 2>&1 )
+    \$( uniprot_data.py --version 2>&1 )
     END_VERSIONS
     """
 }

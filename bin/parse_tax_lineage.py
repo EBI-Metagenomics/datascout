@@ -52,8 +52,8 @@ def main():
         db_date = datetime.now().strftime('%Y-%m-%d')
 
     if args.version:
-        print(f"ete3: {ete3.__version__}")
-        print(f"NCBI taxdump downloaded on: {db_date}")
+        print(f"\tete3: {ete3.__version__}")
+        print(f"\tNCBI taxdump downloaded on: {db_date}")
         exit(0)
     
     get_tax_lineage(args.taxid, args.output, args.db_path, args.taxdump)

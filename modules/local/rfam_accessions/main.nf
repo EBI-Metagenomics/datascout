@@ -28,7 +28,7 @@ process RFAM_ACCESSIONS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        \$( rfam_accessions.py --tax_file ${tax_ranks} --output_dir "${meta.id}_rfam_dir" --rank ${rank} --config ${rfam_db} --version 2>&1 )
+    \$( rfam_accessions.py --config ${rfam_db} --version 2>&1 )
     END_VERSIONS
     """
 }

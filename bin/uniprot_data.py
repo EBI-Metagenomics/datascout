@@ -6,8 +6,6 @@ import argparse
 import logging
 from Bio import SeqIO
 
-logging.basicConfig(level=logging.INFO)
-
 URL = "https://rest.uniprot.org/uniprotkb/stream?"
 
 SEARCH_URL_ARGS = {
@@ -118,29 +116,35 @@ def get_uniprot_version():
 def main():
     parser = argparse.ArgumentParser(description="Fetch data from orthodb")
     parser.add_argument(
-        "-t", "--tax_file", type=str, help="File with taxonomic lineage information", required=True
+        "-t", "--tax_file", type=str, help="File with taxonomic lineage information"
     )
     parser.add_argument(
-        "-o", "--output_dir", type=str, help="output directory", required=True
+        "-o", "--output_dir", type=str, help="output directory"
     )
     parser.add_argument(
-        "-e", "--evidence", type=str, help="Highest evidence level to search Uniprot proteins", required=False
+        "-e", "--evidence", type=str, help="Highest evidence level to search Uniprot proteins"
     )
     parser.add_argument(
-        "-r", "--rank", type=str, help="Preferred taxonomic rank to search for proteins", required=False 
+        "-r", "--rank", type=str, help="Preferred taxonomic rank to search for proteins"
     )
     parser.add_argument(
         "--swissprot_only", action="store_true", help="Search only SwissProt reviewed entries", default=False
     )
     parser.add_argument(
-        "--version", action="store_true"
+        "--version", action="store_true", help="Print UniProt release version and exit"
     )
     args = parser.parse_args()
 
+
     if args.version:
         version = get_uniprot_version()
-        print(f"UniProt: {version}")
-        exit
+        print(f"\tUniProt: {version}")
+        return  
+
+    logging.basicConfig(level=logging.INFO)
+
+    if not args.tax_file or not args.output_dir:
+        parser.error("--tax_file and --output_dir are required unless --version is specified")
 
     os.makedirs(args.output_dir, exist_ok=True)
     if args.rank == "default":

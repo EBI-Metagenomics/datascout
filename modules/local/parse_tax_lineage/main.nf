@@ -24,7 +24,7 @@ process TAX_LINEAGE {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        \$( parse_tax_lineage.py --taxdump "${taxdump}" --db_path ./.etetoolkit/taxa.sqlite --version 2>&1 )
+    \$( parse_tax_lineage.py --taxdump "${taxdump}" --db_path ./.etetoolkit/taxa.sqlite --version 2>&1 )
     END_VERSIONS
     """
 }

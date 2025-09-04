@@ -5,8 +5,6 @@ import logging
 import argparse
 import os
 
-logging.basicConfig(level=logging.INFO)
-
 def parse_taxa(taxa_file):
     logging.info("Parsing taxa lineages from file")
     tax_dict = {}
@@ -108,7 +106,7 @@ def main():
         "-t", "--tax_file", type=str, help="File with taxonomic lineage information"
     )
     parser.add_argument(
-        "-r", "--rank", type=str, help="Preferred rank to search for families", required=False
+        "-r", "--rank", type=str, help="Preferred rank to search for families"
     )
     parser.add_argument(
         "-o", "--output_dir", type=str, help="output directory"
@@ -126,14 +124,17 @@ def main():
     else:
         rank = args.rank
 
-    os.makedirs(args.output_dir, exist_ok=True)
-
     connection = connect_to_rfam(args.config)
     if args.version:
         version, date = get_rfam_version(connection)
-        print(f"Rfam: {version}")
-        print(f"Rfam release date: {date}")
-        exit(0)
+        print(f"\tRfam: {version}")
+        print(f"\tRfam release date: {date}")
+        return
+
+    logging.basicConfig(level=logging.INFO)
+
+    if not args.tax_file or not args.output_dir:
+        parser.error("--tax_file and --output_dir are required unless --version is specified")
 
     taxa_dict = parse_taxa(args.tax_file)
     rfam_results = query_rfam(connection, taxa_dict, args.config, rank)

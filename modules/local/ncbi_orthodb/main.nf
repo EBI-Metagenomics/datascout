@@ -33,7 +33,7 @@ process NCBI_ORTHODB {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        OrthoDB: \$( ncbi_orthodb_data.py --version 2>&1 )
+    \$( ncbi_orthodb_data.py --version 2>&1 )
     END_VERSIONS
     """
 }

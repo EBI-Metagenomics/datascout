@@ -10,8 +10,6 @@ import time
 import glob
 from Bio import SeqIO
 
-logging.basicConfig(level=logging.INFO)
-
 #   set all requests static params beforehand
 PARSE_URL = "https://data.orthodb.org/current/fasta?"
 SEARCH_URL = "https://data.orthodb.org/current/search?"
@@ -162,8 +160,13 @@ def main():
 
     if args.version:
         version = requests.get(VERSION_URL)
-        print(version.text.strip())
+        print(f"\tOrthoDB:{version.text.strip()}")
         exit(0)
+
+    logging.basicConfig(level=logging.INFO)
+
+    if not args.tax_file or not args.output_dir:
+        parser.error("--tax_file and --output_dir are required unless --version is specified")
 
     if args.lineage_max == "default":
         max_lineage = None
@@ -176,7 +179,7 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
 
     if clusters:
-    # Chop the data in small blocks and query them with a wait intervall to avoid spaming orthoDB
+    # Chop the data in small blocks and query them with a wait interval to avoid spamming orthoDB
         num_clusters = len(clusters)
         start = 0
         end = MAX_NB_QUERIES_PER_BLOCK
