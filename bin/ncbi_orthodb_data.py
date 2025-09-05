@@ -154,7 +154,7 @@ def main():
         "-o", "--output_dir", type=str, help="output directory"
     )
     parser.add_argument(
-        "--version", action='version', action="store_true", help="Show orthodb version number and exit"
+        "--version", action="store_true", help="Show orthodb version number and exit"
     )
     args = parser.parse_args()
 

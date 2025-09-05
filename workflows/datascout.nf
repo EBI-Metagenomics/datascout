@@ -58,7 +58,7 @@ workflow DATASCOUT {
         // get taxonomy lineage 
         TAX_LINEAGE(input.taxid, params.taxdump, params.sqlite)
         TAX_LINEAGE.out.tax_ranks.set { taxa_ch }
-        ch_versions = ch_versions.mix(TAX_LINEAGE.out.versions)
+        ch_versions = ch_versions.mix(TAX_LINEAGE.out.versions.first())
 
         // prevent meta getting mixed up
         taxa_ch.join(input.orthodb_tax).set { joined_orthodb }
@@ -67,13 +67,13 @@ workflow DATASCOUT {
 
         // query databases for supporting proteins and rnas
         NCBI_ORTHODB(joined_orthodb)
-        ch_versions = ch_versions.mix(NCBI_ORTHODB.out.versions)
+        ch_versions = ch_versions.mix(NCBI_ORTHODB.out.versions.first())
 
         UNIPROT_DATA(joined_uniprot, params.swissprot ?: false)
-        ch_versions = ch_versions.mix(UNIPROT_DATA.out.versions)
+        ch_versions = ch_versions.mix(UNIPROT_DATA.out.versions.first())
 
         RFAM_ACCESSIONS(joined_rfam, params.rfam_db)
-        ch_versions = ch_versions.mix(RFAM_ACCESSIONS.out.versions)
+        ch_versions = ch_versions.mix(RFAM_ACCESSIONS.out.versions.first())
 
         // modify meta
         input.genome_file
@@ -118,7 +118,7 @@ workflow DATASCOUT {
                 1,
                 params.max_runs
             )
-            ch_versions = ch_versions.mix(SOURMASH.out.versions)
+            ch_versions = ch_versions.mix(SOURMASH.out.versions.first())
         }
 
         else {
@@ -134,9 +134,9 @@ workflow DATASCOUT {
 
         // Collect and concatenate all versions
         ch_versions
+            .unique()
             .collectFile(
                 name: 'software_versions.yml',
-                keepHeader: true,
                 sort: true,
                 storeDir: "${params.outdir}/pipeline_info"
             )
