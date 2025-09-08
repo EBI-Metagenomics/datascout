@@ -1,0 +1,28 @@
+nextflow_process {
+
+    name "Test Process GENOME_ASSEMBLY"
+    script "modules/local/genome_assembly/main.nf"
+    process "GENOME_ASSEMBLY"
+
+    test("Should run without failures") {
+
+        when {
+            params {
+                outdir   = "$outputDir"
+            }
+            process {
+                """
+                input[0] = tuple([ id:"GCA_003719455.1", ena_tax:"default"], [])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+
+        }
+
+    }
+
+}

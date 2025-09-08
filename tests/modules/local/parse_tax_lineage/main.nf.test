@@ -1,0 +1,34 @@
+nextflow_process {
+
+    name "Test Process TAX_LINEAGE"
+    script "modules/local/parse_tax_lineage/main.nf"
+    process "TAX_LINEAGE"
+
+    test("Should run without failures") {
+
+
+        setup {
+            "${projectDir}/tests/reference_databases/ncbi/make_mini_db.py".execute().waitFor()
+        }
+
+        when {
+            process {
+                """
+                input[0] = tuple([id:"test_sample1", genome_id:"GCA_003719455.1", ena_tax:"default"], 5693)
+                input[1] = "${projectDir}/tests/reference_databases/ncbi/mini_taxdump.tar.gz"
+                input[2] = "${projectDir}/tests/reference_databases/ncbi/mini_trypanosoma.sqlite"
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(
+                process.out.tax_ranks,
+                process.out.versions
+                ).match()
+        }
+
+    }
+
+}

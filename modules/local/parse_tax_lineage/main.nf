@@ -20,11 +20,11 @@ process TAX_LINEAGE {
     prefix = meta.id
     """
     cp -r ${db_path} ./
-    parse_tax_lineage.py --taxid ${taxid} --output ${prefix}_tax_ranks.tsv --taxdump "${taxdump}" --db_path ./.etetoolkit/taxa.sqlite
+    parse_tax_lineage.py --taxid ${taxid} --output ${prefix}_tax_ranks.tsv --taxdump "${taxdump}" --db_path "${db_path}"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-    \$( parse_tax_lineage.py --taxdump "${taxdump}" --db_path ./.etetoolkit/taxa.sqlite --version 2>&1 )
+    \$( parse_tax_lineage.py --taxdump "${taxdump}" --db_path --db_path "${db_path}" --version 2>&1 )
     END_VERSIONS
     """
 }

@@ -10,6 +10,8 @@ def get_tax_lineage(taxid, outfile, db_path=None, taxdump=None):
 
     if db_path and taxdump:
         ncbi = NCBITaxa(dbfile=db_path, taxdump_file=taxdump)
+    elif db_path:
+        ncbi = NCBITaxa(dbfile=db_path)
     else:
         ncbi = NCBITaxa()    
 
