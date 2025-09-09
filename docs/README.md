@@ -3,12 +3,12 @@
 The datascout pipeline is split into the following steps:
 
 <p align="center">
-    <img src="datascout.png" alt="ebi-metagenomics/datascout pipeline diagram">
+    <img src="datascout_whitebg.png" alt="ebi-metagenomics/datascout pipeline diagram">
 </p>
 
 ## Step 1. Construct taxonomic lineage
 
-Uses NCBI taxdump to construct taxonomic lineages using [ete3], ignoring any ranks labelled as "no rank"
+Uses NCBI taxdump to construct taxonomic lineages using [ete toolkit](https://github.com/etetoolkit/ete), ignoring any ranks labelled as "no rank"
 
 ## Step 2. OrthoDB
 
