@@ -2,7 +2,9 @@
 
 The datascout pipeline is split into the following steps:
 
-[Pipeline diagram](datascout.png)
+<p align="center">
+    <img src="datascout.png" alt="ebi-metagenomics/datascout pipeline diagram">
+</p>
 
 ## Step 1. Construct taxonomic lineage
 
