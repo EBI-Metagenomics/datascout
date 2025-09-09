@@ -1,0 +1,48 @@
+{
+    "versions": {
+        "content": [
+            [
+                "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/6b70e874e1883439a84a40664be61285/work/32/de7ddfa8437a74eded32a65e4acbcc/versions.yml"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.04.3"
+        },
+        "timestamp": "2025-09-08T14:31:37.638226"
+    },
+    "versions.yml": {
+        "content": [
+            [
+                "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/6b70e874e1883439a84a40664be61285/work/c5/ee3808975c880ad62f89eda9518f5c/versions.yml"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.04.3"
+        },
+        "timestamp": "2025-09-08T14:44:03.304948"
+    },
+    "Should run without failures": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_sample1",
+                        "genome_id": "GCA_003719455.1",
+                        "ena_tax": "default"
+                    },
+                    "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/6b70e874e1883439a84a40664be61285/work/07/124eeddba478519f01b5905c752e50/test_sample1_tax_ranks.tsv"
+                ]
+            ],
+            [
+                "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/6b70e874e1883439a84a40664be61285/work/07/124eeddba478519f01b5905c752e50/versions.yml"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.04.3"
+        },
+        "timestamp": "2025-09-08T15:40:56.041464"
+    }
+}

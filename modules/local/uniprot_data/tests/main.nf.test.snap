@@ -8,17 +8,17 @@
                         "genome_id": "GCA_003719455.1",
                         "ena_tax": "default"
                     },
-                    "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/6b70e874e1883439a84a40664be61285/work/f5/5aec3851472e37b1a321a6c84c02af/test_sample1_tax_ranks.tsv"
+                    "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/543b1f98aff365c1bc545a58cc4bbf72/work/71/10f35861d5e0f2168739b0578d82bc/test_sample1_uniprot_dir"
                 ]
             ],
             [
-                "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/6b70e874e1883439a84a40664be61285/work/f5/5aec3851472e37b1a321a6c84c02af/versions.yml"
+                "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/543b1f98aff365c1bc545a58cc4bbf72/work/71/10f35861d5e0f2168739b0578d82bc/versions.yml"
             ]
         ],
         "meta": {
             "nf-test": "0.9.2",
             "nextflow": "25.04.3"
         },
-        "timestamp": "2025-09-08T13:24:57.619858"
+        "timestamp": "2025-09-09T09:39:33.762252"
     }
 }

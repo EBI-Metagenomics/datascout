@@ -19,7 +19,7 @@ process GENOME_ASSEMBLY {
     tuple val(meta), path(genome_file)
 
     output:
-    tuple val(meta), path ("*_reheaded_assembly.fasta"), emit: assembly_fa
+    tuple val(meta), path("*_reheaded_assembly.fasta"), emit: assembly_fa
 
     script:
     """

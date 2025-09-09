@@ -21,14 +21,15 @@ nextflow_process {
             }
         }
 
+
         then {
-            assert process.success
-            assert snapshot(
-                process.out.tax_ranks,
-                process.out.versions
-                ).match()
+            assertAll{
+                { assert process.success }
+                { assert snapshot(
+                    process.out.tax_ranks,
+                    process.out.versions
+                ).match()   }
+            }
         }
-
     }
-
 }
