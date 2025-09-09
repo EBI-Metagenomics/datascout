@@ -1,4 +1,26 @@
 {
+    "should run without failures with swissprot": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_sample1",
+                        "genome_id": "GCA_003719455.1",
+                        "ena_tax": "default"
+                    },
+                    "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/28a602771d3a4459e102ef55535f3482/work/44/faeefbfff6732fd97a25f75584ef24/test_sample1_uniprot_dir"
+                ]
+            ],
+            [
+                "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/28a602771d3a4459e102ef55535f3482/work/44/faeefbfff6732fd97a25f75584ef24/versions.yml"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.04.3"
+        },
+        "timestamp": "2025-09-09T15:15:18.383431"
+    },
     "Should run without failures": {
         "content": [
             [
@@ -8,17 +30,17 @@
                         "genome_id": "GCA_003719455.1",
                         "ena_tax": "default"
                     },
-                    "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/543b1f98aff365c1bc545a58cc4bbf72/work/71/10f35861d5e0f2168739b0578d82bc/test_sample1_uniprot_dir"
+                    "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/543b1f98aff365c1bc545a58cc4bbf72/work/a3/7b9687676163b3784147e5ed462fe6/test_sample1_uniprot_dir"
                 ]
             ],
             [
-                "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/543b1f98aff365c1bc545a58cc4bbf72/work/71/10f35861d5e0f2168739b0578d82bc/versions.yml"
+                "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/543b1f98aff365c1bc545a58cc4bbf72/work/a3/7b9687676163b3784147e5ed462fe6/versions.yml"
             ]
         ],
         "meta": {
             "nf-test": "0.9.2",
             "nextflow": "25.04.3"
         },
-        "timestamp": "2025-09-09T09:39:33.762252"
+        "timestamp": "2025-09-09T15:15:06.257219"
     }
 }

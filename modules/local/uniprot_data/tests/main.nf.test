@@ -7,14 +7,31 @@ nextflow_process {
     test("Should run without failures") {
 
         when {
-            params {
-                // define parameters here. Example:
-                // outdir = "tests/results"
-            }
             process {
                 """
                 input[0] = tuple([id:"test_sample1", genome_id:"GCA_003719455.1", ena_tax:"default"], "${projectDir}/tests/reference_databases/test_sample1_tax_ranks.tsv", "default", 2)
                 input[1] = false
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(
+                process.out.uniprot_results,
+                process.out.versions
+            ).match()
+        }
+
+    }
+
+    test("should run without failures with swissprot"){
+
+        when {
+            process {
+                """
+                input[0] = tuple([id:"test_sample1", genome_id:"GCA_003719455.1", ena_tax:"default"], "${projectDir}/tests/reference_databases/test_sample1_tax_ranks.tsv", "default", 1)
+                input[1] = true
                 """
             }
         }

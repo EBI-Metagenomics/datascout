@@ -1,65 +1,108 @@
-# datascout
-This repo queries and gather data from different resources which can then be used to run bulk automatised annotation of microbial genomes.
-The different types of data are: 
-  - OrthoDB and UniProt orthology data;
-  - Rfam (non coding Rna data);
-  - Transcriptomic data from ENA
-  - Genome sequence file from ENA
+## Introduction
 
+**ebi-metagenomics/datascout** is a pipeline to query and fetch protein, RNA and transcriptomic evidence to support eukaryotic gene annotation, from different data archives: European Nucleotide Archive (ENA), Rfam, UniProt and OrthoDB
+ 
+The pipeline allows for bespoke requests such as specificity of taxonomic rank queried, evidence levels and volume of outputs.
 
-### Getting this repo
+The steps of the pipeline are outlined in the [documentation](docs/README.md).
 
-```
-git clone git@github.com:manuelcarbajo/datascout
-```
+> [!NOTE]
+> This pipeline uses the [nf-core](https://nf-co.re) template with some tweaks, but it's not part of nf-core.
 
-### Configuration
+## Usage
 
-#### Refresing environment
+Pipeline help:
 
-This project uses nextflow-24.04.3
+```angular2html
+Typical pipeline command:
 
-### Initialising and running the environment
+USAGE:
+  nextflow run main.nf --samplesheet <file> [options]
 
-After downloading the datascout repo define a PROJECT_DIR variable (path to datascout git repo).
-```
-export PROJECTDIR="/path/to/your/Ensembl-datascout"
-cd ${PROJECTDIR}
-```
+REQUIRED INPUT/OUTPUT OPTIONS:
+  --samplesheet <file>    Path to comma-separated file (CSV/TSV/YAML) containing
+                          information about the samples and genomes.
+                          You will need to create this before running the pipeline.
 
-Define the configuration of USER/PWD/SERVER/PORT of your mysql ncbi_tax and rfam DBs in ""${PROJECT_DIR}/conf/ncbi_db.conf""
-and ""${PROJECT_DIR}/conf/rfam_db.conf"" following the structure in the template in that same folder:
-mysql://USER:PWD@mysql-ncbi-SERVER:PORT/ncbi_taxonomy_db.
+OPTIONAL INPUT/OUTPUT OPTIONS:
+  --outdir <dir>          The output directory where the results will be saved.
+                          [default: results]
 
-Test the configuration with:
-```
-nextflow run main.nf -profile slurm,test,singularity
-```
-Use a comma separated list of genomes to annotate as input  
-(following the template in ""${PROJECT_DIR}/assets/test_data/genomes_test_list.csv"")  
+DATABASE OPTIONS:
+  --taxdump <file>        Path to NCBI taxonomy dump file. Will be downloaded if not provided.
+                          Used for taxonomic lineage parsing.
+  --sqlite <dir>          Path to NCBI sqlite database. Will be downloadeds if not provided.
+                          Used for taxonomic lineage parsing.
+  --rfam_db <file>        Path to the latest available public Rfam database connection config.
+                          [default: ${projectDir}/assets/rfam_db.txt]
+                          Used for RNA family searches.
 
-  GENOME_NAME	TAX_ID	ENA_ACCESSION    
-  #Example:  
-  toxoplasma_gondii_ME49,508771,GCA_000006565.2  
-  tripanosoma_cruzi,5693,GCA_003719455.1
-
-Define and export the following variables:
-
-export INPUT_CSV="/path/to/your/input-file-dir/your_genomes_list.csv"
-export OUTPUT_PATH="/path/to/your/output-dir/genome_annotations"
-
-export ORTHODB_FOLDER="/path/to/your/static-storage-dir/orthodb_dir"
-export ASSEMBLIES_DIR="/path/to/your/static-storage-dir/assemblies_dir"
-export ENA_CSV_DIR="/path/to/your/static-storage-dir/ena_csv_dir"
-export FASTQ_DIR="/path/to/your/static-storage-dir/rna_fastq_dir"
-export UNIPROT_DIR="/path/to/your/static-storage-dir/uniprot_dir"
-
-To run the pipeline execute:
-```
-nextflow run main.nf --csv_file $INPUT_CSV --outdir $OUTPUT_PATH --orthodb_dir $ORTHODB_FOLDER --assemblies_dir $ASSEMBLIES_DIR --rna_fastq_dir $FASTQ_DIR --uniprot_dir $UNIPROT_DIR  --ena_csv_dir $ENA_CSV_DIR -profile slurm
+PROCESSING OPTIONS:
+  --max_runs <int>        Maximum number of runs to process.
+                          [default: 100, min: 1, max: 10000]
+  --sourmash              Enable sourmash filtering.
+                          Uses sourmash for sequence similarity filtering instead of
+                          direct FASTQ download. [default: false]
+  --swissprot             Use SwissProt database only.
+                          Restricts UniProt searches to manually curated entries. [default: false]
 ```
 
-### UPDATED - Initialising and running the environment
+### Samplesheet
+
+The samplesheet is a comma separated file with the following columns. Please include a blank field for the optional columns even if they are unused.
+You can use the [example samplesheet](assets/samplesheet.csv) to guide you.
+
+Required columns 
+
+| Column      | Type    | Description                                                                  |
+| ----------- | ------- | ---------------------------------------------------------------------------- |
+| `sample_id` | string  | Unique identifier for the sample. Each sample must have a distinct ID.       |
+| `genome`    | string  | Genome assembly accession (e.g. `GCA_003719455.1`) for the submitted genome. |
+| `taxid`     | integer | NCBI taxonomy ID corresponding to the genome.                                |
+
+Optional columns
+
+| Column             | Type    | Default   | Description                                                              |
+| ------------------ | ------- | --------- | ------------------------------------------------------------------------ |
+| `orthodb`          | string  | `default` | Maximum taxonomic level to use for OrthoDB queries.                      |
+| `uniprot`          | string  | `default` | Preferred taxonomic level for UniProt queries.                           |
+| `rfam`             | string  | `default` | Preferred taxonomic level for RFAM RNA family searches.                  |
+| `ena`              | string  | `default` | Preferred taxonomic level for ENA transcriptome data.                    |
+| `uniprot_evidence` | integer | `2`       | Minimum UniProt evidence level (higher = more reliable, but fewer hits). |
+| `assembly_file`    | string  | —         | Path to an existing genome FASTA file (skips download if provided).      |
+
+## Outputs
+
+The outputs of the pipeline are as follows:
 ```
-nextflow run main.nf --samplesheet {SAMPLESHEET} --output {OUTPUTDIR} --max_runs {MAX NO TRANSCRIPTOME RUNS TO DOWNLOAD}
+results
+├── GCA_003719455.1_default_rna_fastq_dir
+│   ├── SRR32368313_1.fastq
+│   └── SRR32368313_2.fastq
+├── GCA_003719455.1_ENA_filtered_rna.csv
+├── GCA_003719455.1_reheaded_assembly.fasta
+├── pipeline_info
+│   ├── execution_report.html
+│   ├── execution_timeline.html
+│   ├── execution_trace.txt
+│   ├── pipeline_dag.svg
+│   └── software_versions.yml
+├── test_sample1_orthodb_dir
+│   └── 5690_sequences
+│       └── combined_orthodb_5690.faa
+├── test_sample1_rfam_dir
+│   └── rfam_ids.txt
+├── test_sample1_tax_ranks.tsv
+├── test_sample1_uniprot_dir
+│   ├── 5693_uniprot_proteins.faa
+│   └── 5693_uniprot_raw.faa
+├── test_sample2_orthodb_dir
+│   └── 5690_sequences
+│       └── combined_orthodb_5690.faa
+├── test_sample2_rfam_dir
+│   └── rfam_ids.txt
+├── test_sample2_tax_ranks.tsv
+└── test_sample2_uniprot_dir
+    ├── 5654_uniprot_proteins.faa
+    └── 5654_uniprot_raw.faa
 ```
