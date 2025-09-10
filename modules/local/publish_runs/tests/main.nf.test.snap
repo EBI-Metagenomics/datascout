@@ -8,8 +8,8 @@
                         "ena_tax": "default"
                     },
                     [
-                        "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/2e25632c12fcffa933fe289bb77958c3/work/b6/1eb6804248a35e85b0d1c5d231e86c/GCA_003719455.1_default_rna_fastq_dir/SRRtest_1.fastq",
-                        "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/2e25632c12fcffa933fe289bb77958c3/work/b6/1eb6804248a35e85b0d1c5d231e86c/GCA_003719455.1_default_rna_fastq_dir/SRRtest_2.fastq"
+                        "SRRtest_1.fastq:md5,8ff9c17b0f3e0ada46c3f71be706c52f",
+                        "SRRtest_2.fastq:md5,1df6c4c59552d5fe46879e6b90317d3a"
                     ]
                 ]
             ]
@@ -18,6 +18,6 @@
             "nf-test": "0.9.2",
             "nextflow": "25.04.3"
         },
-        "timestamp": "2025-09-09T13:40:35.558922"
+        "timestamp": "2025-09-10T19:36:29.592523"
     }
 }

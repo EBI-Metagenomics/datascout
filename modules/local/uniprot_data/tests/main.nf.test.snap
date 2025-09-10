@@ -8,18 +8,21 @@
                         "genome_id": "GCA_003719455.1",
                         "ena_tax": "default"
                     },
-                    "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/28a602771d3a4459e102ef55535f3482/work/44/faeefbfff6732fd97a25f75584ef24/test_sample1_uniprot_dir"
+                    [
+                        "5693_uniprot_proteins.faa:md5,20f6b49b5f80d5fc210b28f0c247711b",
+                        "5693_uniprot_raw.faa:md5,a587ed8f607ca92cc20118f687e64436"
+                    ]
                 ]
             ],
             [
-                "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/28a602771d3a4459e102ef55535f3482/work/44/faeefbfff6732fd97a25f75584ef24/versions.yml"
+                "versions.yml:md5,f87d962a00a376bc975397c919e76479"
             ]
         ],
         "meta": {
             "nf-test": "0.9.2",
             "nextflow": "25.04.3"
         },
-        "timestamp": "2025-09-09T15:15:18.383431"
+        "timestamp": "2025-09-10T16:43:52.740814"
     },
     "Should run without failures": {
         "content": [
@@ -30,17 +33,20 @@
                         "genome_id": "GCA_003719455.1",
                         "ena_tax": "default"
                     },
-                    "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/543b1f98aff365c1bc545a58cc4bbf72/work/a3/7b9687676163b3784147e5ed462fe6/test_sample1_uniprot_dir"
+                    [
+                        "5693_uniprot_proteins.faa:md5,79ab68a535498bbee3ecd193487e3fc6",
+                        "5693_uniprot_raw.faa:md5,380a59819358217b2f99a6538ba4baa4"
+                    ]
                 ]
             ],
             [
-                "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/543b1f98aff365c1bc545a58cc4bbf72/work/a3/7b9687676163b3784147e5ed462fe6/versions.yml"
+                "versions.yml:md5,f87d962a00a376bc975397c919e76479"
             ]
         ],
         "meta": {
             "nf-test": "0.9.2",
             "nextflow": "25.04.3"
         },
-        "timestamp": "2025-09-09T15:15:06.257219"
+        "timestamp": "2025-09-10T16:43:40.297581"
     }
 }

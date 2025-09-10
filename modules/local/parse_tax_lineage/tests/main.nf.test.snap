@@ -32,17 +32,17 @@
                         "genome_id": "GCA_003719455.1",
                         "ena_tax": "default"
                     },
-                    "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/6b70e874e1883439a84a40664be61285/work/07/124eeddba478519f01b5905c752e50/test_sample1_tax_ranks.tsv"
+                    "test_sample1_tax_ranks.tsv:md5,b06eebb92f06f93c2894fb5f4e685d13"
                 ]
             ],
             [
-                "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/6b70e874e1883439a84a40664be61285/work/07/124eeddba478519f01b5905c752e50/versions.yml"
+                "versions.yml:md5,b000fb6960a0415110097b73d9a673fe"
             ]
         ],
         "meta": {
             "nf-test": "0.9.2",
             "nextflow": "25.04.3"
         },
-        "timestamp": "2025-09-08T15:40:56.041464"
+        "timestamp": "2025-09-10T19:34:59.313464"
     }
 }
