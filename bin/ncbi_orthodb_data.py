@@ -13,7 +13,7 @@ from Bio import SeqIO
 #   set all requests static params beforehand
 PARSE_URL = "https://data.orthodb.org/current/fasta?"
 SEARCH_URL = "https://data.orthodb.org/current/search?"
-VERSION_URL = "https://data.orthodb.org/v12/orthodb_release_id"
+VERSION_URL = "https://data.orthodb.org/current/orthodb_release_id"
 
 SEARCH_URL_ARGS = {
     "universal": "0.9",
