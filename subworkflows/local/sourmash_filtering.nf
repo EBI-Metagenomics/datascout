@@ -2,10 +2,10 @@
 
 include { SOURMASH_SKETCH as SOURMASH_SKETCH_FASTQ  } from '../../modules/nf-core/sourmash/sketch/main'
 include { SOURMASH_SKETCH as SOURMASH_SKETCH_GENOME } from '../../modules/nf-core/sourmash/sketch/main'
-include { DOWNLOAD_FASTQ_FILES                      } from "../../modules/local/download_fastq_files/main.nf"
-include { SOURMASH_GATHER                           } from "../../modules/local/sourmash_gather/main.nf"
-include { GET_CONTAINMENT                           } from "../../modules/local/get_containment/main.nf"
-include { PUBLISH_RUNS                              } from "../../modules/local/publish_runs/main.nf"
+include { DOWNLOAD_FASTQ_FILES                      } from '../../modules/local/download_fastq_files/main.nf'
+include { SOURMASH_GATHER                           } from '../../modules/local/sourmash_gather/main.nf'
+include { GET_CONTAINMENT                           } from '../../modules/local/get_containment/main.nf'
+include { PUBLISH_RUNS                              } from '../../modules/local/publish_runs/main.nf'
 
 
 workflow SOURMASH {

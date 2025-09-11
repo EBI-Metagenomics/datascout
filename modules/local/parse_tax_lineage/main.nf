@@ -2,7 +2,6 @@ process TAX_LINEAGE {
 
     container 'quay.io/biocontainers/ete3:3.1.2'
 
-    publishDir "${params.outdir}", mode: 'copy', pattern: "*tax_ranks.tsv"
     label "process_medium"
 
     tag "${meta}"

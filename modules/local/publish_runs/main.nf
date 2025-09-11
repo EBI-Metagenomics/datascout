@@ -1,8 +1,6 @@
 #!/usr/bin/env nextflow
 process PUBLISH_RUNS {
 
-    debug true
-    publishDir "${params.outdir}", mode: "copy"
     label 'process_low'
 
     tag "${meta}"

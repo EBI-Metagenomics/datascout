@@ -1,17 +1,11 @@
 process NCBI_ORTHODB {
     maxForks 3
 
-    conda "./environment.yml"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/d2/d2cc550ff67f8541d44dc2db1b5d2d2e1cfccfe8536222b49788deefde7460f0/data' :
         'community.wave.seqera.io/library/python_pip_biopython_requests:725bda83fb97ec48' }"
 
-// oras://community.wave.seqera.io/library/orthodb_pip_biopython:eb02e2ef4ff70396
-// https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/ae/aec6566b3bb33bae55f3dd2c6be206e2dea139be27f78102b32f9b23d5a7b31a/data
-// community.wave.seqera.io/library/orthodb_pip_biopython:062c151d7c57397d
-
-    debug true
-    publishDir "${params.outdir}", mode: "copy"
     label "process_medium"
 
     tag "${meta}"
