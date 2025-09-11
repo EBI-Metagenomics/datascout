@@ -1,28 +1,4 @@
 {
-    "versions": {
-        "content": [
-            [
-                "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/6b70e874e1883439a84a40664be61285/work/32/de7ddfa8437a74eded32a65e4acbcc/versions.yml"
-            ]
-        ],
-        "meta": {
-            "nf-test": "0.9.2",
-            "nextflow": "25.04.3"
-        },
-        "timestamp": "2025-09-08T14:31:37.638226"
-    },
-    "versions.yml": {
-        "content": [
-            [
-                "/Users/vkale/Downloads/pipelines/datascout/.nf-test/tests/6b70e874e1883439a84a40664be61285/work/c5/ee3808975c880ad62f89eda9518f5c/versions.yml"
-            ]
-        ],
-        "meta": {
-            "nf-test": "0.9.2",
-            "nextflow": "25.04.3"
-        },
-        "timestamp": "2025-09-08T14:44:03.304948"
-    },
     "Should run without failures": {
         "content": [
             [
@@ -43,6 +19,6 @@
             "nf-test": "0.9.2",
             "nextflow": "25.04.3"
         },
-        "timestamp": "2025-09-10T19:34:59.313464"
+        "timestamp": "2025-09-11T10:52:41.859143"
     }
 }
