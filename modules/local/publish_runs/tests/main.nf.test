@@ -1,0 +1,28 @@
+nextflow_process {
+
+    name "Test Process PUBLISH_RUNS"
+    script "modules/local/publish_runs/main.nf"
+    process "PUBLISH_RUNS"
+
+    test("Should run without failures") {
+
+        when {
+            params {
+                // define parameters here. Example:
+                // outdir = "tests/results"
+            }
+            process {
+                """
+                input[0] = tuple([id:"GCA_003719455.1", ena_tax:"default"], [ "$projectDir/tests/reference_databases/SRRtest_1.fastq", "$projectDir/tests/reference_databases/SRRtest_2.fastq"] )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out.fastq_files).match()
+        }
+
+    }
+
+}

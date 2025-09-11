@@ -1,0 +1,28 @@
+nextflow_process {
+
+    name "Test Process RFAM_ACCESSIONS"
+    script "modules/local/rfam_accessions/main.nf"
+    process "RFAM_ACCESSIONS"
+
+    test("Should run without failures") {
+
+        when {
+            process {
+                """
+                input[0] = tuple([id:"test_sample1", genome_id:"GCA_003719455.1", ena_tax:"default"], "$projectDir/tests/reference_databases/test_sample1_tax_ranks.tsv", "default")
+                input[1] = "$projectDir/assets/rfam_db.conf"
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(
+                process.out.rfam_results,
+                process.out.versions
+            ).match()
+        }
+
+    }
+
+}

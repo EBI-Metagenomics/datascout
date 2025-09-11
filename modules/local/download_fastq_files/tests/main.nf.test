@@ -1,0 +1,26 @@
+nextflow_process {
+
+    name "Test Process DOWNLOAD_FASTQ_FILES"
+    script "modules/local/download_fastq_files/main.nf"
+    process "DOWNLOAD_FASTQ_FILES"
+
+    test("Should run without failures") {
+
+        when {
+            process {
+                """
+                input[0] = tuple([id:"GCA_003719455.1", ena_tax:"default"], "$projectDir/tests/reference_databases/GCA_003719455.1_ENA_filtered_rna.csv")
+                input[1] = 1
+                input[2] = 1
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out.fastq_files).match()
+        }
+
+    }
+
+}

@@ -1,0 +1,31 @@
+nextflow_process {
+
+    name "Test Process SOURMASH_GATHER"
+    script "modules/local/sourmash_gather/main.nf"
+    process "SOURMASH_GATHER"
+
+    test("Should run without failures") {
+
+        when {
+            process {
+                """
+                input[0] = tuple(
+                [id:"GCA_003719455.1", ena_tax:"default"], 
+                "$projectDir/tests/reference_databases/GCA_003719455.1.sig", 
+                ["$projectDir/tests/reference_databases/SRR32368313.sig"]
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(
+                process.out.gather_csv,
+                process.out.versions
+            ).match()
+        }
+
+    }
+
+}

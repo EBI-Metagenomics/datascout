@@ -1,0 +1,26 @@
+{
+    "Should run without failures": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_sample1",
+                        "genome_id": "GCA_003719455.1",
+                        "ena_tax": "default"
+                    },
+                    [
+                        "rfam_ids.txt:md5,8950f0d41ad4850ac6b4fbba80c7ae65"
+                    ]
+                ]
+            ],
+            [
+                "versions.yml:md5,8ca24dc01e3c84c5efa832419923cb09"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.04.3"
+        },
+        "timestamp": "2025-09-10T19:37:17.170832"
+    }
+}
