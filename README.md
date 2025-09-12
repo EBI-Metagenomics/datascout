@@ -47,7 +47,7 @@ Results are filtered for swissprot only entries if the the input flag is used.
 Query Rfam for models matching the most specific possible taxid OR the given rank in the samplesheet.
 Outputs a list of Rfams.
 
-This step uses the [credentials](../assets/rfam_db.conf) for the public Rfam database
+This step uses the [credentials](assets/rfam_db.conf) for the public Rfam database
 
 ## Step 5. ENA and transcriptomes
 

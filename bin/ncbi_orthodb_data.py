@@ -154,6 +154,9 @@ def main():
         "-o", "--output_dir", type=str, help="output directory"
     )
     parser.add_argument(
+        "--max_clusters", type=int, default=None, help="Limit the number of clusters to fetch (mainly for testing)"
+    )
+    parser.add_argument(
         "--version", action="store_true", help="Show orthodb version number and exit"
     )
     args = parser.parse_args()
@@ -179,7 +182,9 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
 
     if clusters:
-    # Chop the data in small blocks and query them with a wait interval to avoid spamming orthoDB
+        if args.max_clusters:
+            logging.info(f"Limit to first {args.max_clusters} clusters")
+            clusters = clusters[:args.max_clusters]
         num_clusters = len(clusters)
         start = 0
         end = MAX_NB_QUERIES_PER_BLOCK

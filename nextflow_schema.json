@@ -4,6 +4,11 @@
   "title": "DATASCOUT pipeline parameters",
   "description": "A pipeline for fetching protein and sequence data from multiple databases: ENA, UniProt, OrthoDB, and RFAM",
   "type": "object",
+  "allOf": [
+    { "$ref": "#/definitions/input_output_options" },
+    { "$ref": "#/definitions/database_options" },
+    { "$ref": "#/definitions/processing_options" }
+  ],
   "definitions": {
     "input_output_options": {
       "title": "Input/output options",
@@ -51,12 +56,12 @@
           "fa_icon": "fas fa-folder"
         },
         "rfam_db": {
-        "type": "string",
-        "format": "file-path",
-        "description": "Path to RFAM database file",
-        "help_text": "Path to the RFAM database file for RNA family searches. Defaults to bundled database in assets/",
-        "fa_icon": "fas fa-file",
-        "default": "${projectDir}/assets/rfam_db.txt"
+          "type": "string",
+          "format": "file-path",
+          "description": "Path to RFAM database file",
+          "help_text": "Path to the RFAM database file for RNA family searches. Defaults to bundled database in assets/",
+          "fa_icon": "fas fa-file",
+          "default": "${projectDir}/assets/rfam_db.txt"
         }
       }
     },
@@ -88,19 +93,16 @@
           "description": "Use SwissProt database only",
           "help_text": "When enabled, restricts UniProt searches to SwissProt (manually curated) entries only",
           "fa_icon": "fas fa-certificate"
+        },
+        "max_orthodb_clusters": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Limit the number of OrthoDB clusters to fetch (mainly for testing)",
+          "help_text": "When set, limits the number of OrthoDB clusters fetched per sample. Useful for testing.",
+          "fa_icon": "fas fa-hashtag",
+          "default": null
         }
       }
     }
-  },
-  "allOf": [
-    {
-      "$ref": "#/definitions/input_output_options"
-    },
-    {
-      "$ref": "#/definitions/database_options"
-    },
-    {
-      "$ref": "#/definitions/processing_options"
-    }
-  ]
+  }
 }

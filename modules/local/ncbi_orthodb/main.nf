@@ -15,15 +15,17 @@ process NCBI_ORTHODB {
 
     input:
       tuple val(meta), path(tax_ranks), val(max_rank)
+      val(max_clusters)
 
     output:
       tuple val(meta), path("${meta.id}_orthodb_dir"), emit: orthodb_results
       path("versions.yml"), emit: versions
 
     script:
+    def max_clusters_arg = max_clusters ? "--max_clusters ${max_clusters}" : ""
     """
     mkdir -p ${meta.id}_orthodb_dir
-    ncbi_orthodb_data.py --tax_file ${tax_ranks} --lineage_max ${max_rank} --output "${meta.id}_orthodb_dir"
+    ncbi_orthodb_data.py --tax_file ${tax_ranks} --lineage_max ${max_rank} --output "${meta.id}_orthodb_dir" ${max_clusters_arg}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -31,6 +33,3 @@ process NCBI_ORTHODB {
     END_VERSIONS
     """
 }
-
-
-// Get proteins from orthodb and reformat into combined fasta file per taxid
