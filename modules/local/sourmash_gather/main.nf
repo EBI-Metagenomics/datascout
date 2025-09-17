@@ -6,9 +6,6 @@ process SOURMASH_GATHER {
 
     tag "${meta}"
 
-    errorStrategy  'retry'
-    maxRetries 2
-
     input:
       tuple val(meta), path(genome_sig), path(list_of_read_sigs)
 
@@ -27,7 +24,7 @@ process SOURMASH_GATHER {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        Sourmash: \$( sourmash --version 2>&1 | cut -d' ' -f2 )
+        sourmash: \$( sourmash --version 2>&1 | cut -d' ' -f2 )
     END_VERSIONS
     """
 }

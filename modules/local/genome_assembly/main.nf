@@ -10,14 +10,12 @@ process GENOME_ASSEMBLY {
 
     tag "${meta}"
 
-    errorStrategy  'retry'
-    maxRetries 3
-
     input:
     tuple val(meta), path(genome_file)
 
     output:
     tuple val(meta), path("*_reheaded_assembly.fasta"), emit: assembly_fa
+    path("versions.yml"), emit: versions
 
     script:
     """
@@ -30,6 +28,10 @@ process GENOME_ASSEMBLY {
     if [[ ! -s "${meta.id}_reheaded_assembly.fasta" ]]; then
         rm -rf "${meta.id}_reheaded_assembly.fasta";
     fi
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+      Python: \$(python --version 2>&1 | sed 's/Python //g')    
     """
 }
 

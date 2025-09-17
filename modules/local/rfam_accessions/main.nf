@@ -7,10 +7,7 @@ process RFAM_ACCESSIONS {
     label "process_low"
 
     tag "${meta}"
-
-    errorStrategy 'retry'
-    maxRetries 2
-
+    
     input:
       tuple val(meta), path(tax_ranks), val(rank)
       val(rfam_db)
@@ -27,6 +24,7 @@ process RFAM_ACCESSIONS {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
     \$( rfam_accessions.py --config ${rfam_db} --version 2>&1 )
+      Python: \$(python --version 2>&1 | sed 's/Python //g')
     END_VERSIONS
     """
 }

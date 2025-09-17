@@ -85,9 +85,11 @@ workflow DATASCOUT {
 
         // fetch genome fasta file
         GENOME_ASSEMBLY(genome_ch)
+        ch_versions = ch_versions.mix(GENOME_ASSEMBLY.out.versions.first())
 
         // fetch ENA metadata
         ENA_RNA_CSV(taxa_ch, params.order_runs_by_smallest)
+        ch_versions = ch_versions.mix(ENA_RNA_CSV.out.versions.first())
 
         // modify meta
         ENA_RNA_CSV.out.rna_csv
@@ -127,6 +129,7 @@ workflow DATASCOUT {
                 1,
                 params.max_runs
             )
+            ch_versions = ch_versions.mix(DOWNLOAD_FASTQ_FILES.out.versions.first())
 
             PUBLISH_RUNS(DOWNLOAD_FASTQ_FILES.out.fastq_files)
         }

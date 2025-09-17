@@ -16,12 +16,17 @@ process ENA_RNA_CSV {
 
     output:
     tuple val(meta), path("${meta.genome_id}_ENA_filtered_rna.csv"), emit: rna_csv
+    path("versions.yml"), emit: versions
 
     script:
     prefix = meta.genome_id
     def order_by_smallest_arg = order_by_smallest ? '--select_smallest' : ''
     """
     rna_seq.py --tax_file ${tax_ranks} --output_file "${prefix}_ENA_filtered_rna.csv" --rank ${meta.ena_tax} ${order_by_smallest_arg}
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+      Python: \$(python --version 2>&1 | sed 's/Python //g')
     """
 }
 

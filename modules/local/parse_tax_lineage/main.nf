@@ -24,6 +24,7 @@ process TAX_LINEAGE {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
     \$( parse_tax_lineage.py --taxdump "${taxdump}" --db_path "${db_path}" --version 2>&1 )
+      Python: \$(python --version 2>&1 | sed 's/Python //g')
     END_VERSIONS
     """
 }

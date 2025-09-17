@@ -10,9 +10,6 @@ process NCBI_ORTHODB {
 
     tag "${meta}"
 
-    errorStrategy 'retry'
-    maxRetries 2
-
     input:
       tuple val(meta), path(tax_ranks), val(max_rank)
       val(max_clusters)
@@ -30,6 +27,7 @@ process NCBI_ORTHODB {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
     \$( ncbi_orthodb_data.py --version 2>&1 )
+      Python: \$(python --version 2>&1 | sed 's/Python //g')
     END_VERSIONS
     """
 }

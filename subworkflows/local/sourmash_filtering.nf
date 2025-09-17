@@ -19,6 +19,7 @@ workflow SOURMASH {
     main:
 
     DOWNLOAD_FASTQ_FILES(ena_metadata, start_line, num_lines)
+    ch_versions = DOWNLOAD_FASTQ_FILES.out.versions.first()
 
     DOWNLOAD_FASTQ_FILES.out.fastq_files
         .flatMap { meta, fastqs -> 
@@ -36,7 +37,7 @@ workflow SOURMASH {
 
 
     SOURMASH_SKETCH_FASTQ(paired_fastq_files)
-    ch_versions = SOURMASH_SKETCH_FASTQ.out.versions
+    ch_versions = ch_versions.mix(SOURMASH_SKETCH_FASTQ.out.versions.first())
 
     SOURMASH_SKETCH_GENOME(genome)
 
@@ -65,9 +66,7 @@ workflow SOURMASH {
 
     GET_CONTAINMENT.out.keep_runs
         .filter { _meta, file -> !file.name.contains('empty') }
-        .map { run_data -> 
-            def meta = run_data[0]
-            def runs = run_data[1]  
+        .map { meta, runs -> 
             def run_ids = runs.readLines().collect { it.trim() }.toList()
             [meta, run_ids] 
         }

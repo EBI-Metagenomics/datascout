@@ -10,14 +10,12 @@ process GET_CONTAINMENT {
 
     tag "${meta}"
 
-    errorStrategy  'retry'
-    maxRetries 2
-
     input:
       tuple val(meta), path(sourmash_file)
 
     output:
       tuple val(meta), path("*runs.txt"), emit: keep_runs
+      path("versions.yml"), emit: versions
 
 
     script:
@@ -28,5 +26,9 @@ process GET_CONTAINMENT {
         echo "${meta.id} had no matching transcriptomic data after filtering."
         touch empty_runs.txt
     fi
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+      Python: \$(python --version 2>&1 | sed 's/Python //g')    
     """
 }

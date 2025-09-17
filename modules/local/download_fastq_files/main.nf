@@ -17,9 +17,14 @@ process DOWNLOAD_FASTQ_FILES {
 
     output:
       tuple val(meta), path("*fastq"), emit: fastq_files
+      path("versions.yml"), emit: versions
 
     script:
     """
     download_rnaseq_fastqs.py --startline ${start_line} --transcriptomes ${ena_metadata} --numlines ${num_lines}
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+      Python: \$(python --version 2>&1 | sed 's/Python //g')
     """
 }
