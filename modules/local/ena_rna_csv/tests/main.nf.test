@@ -11,6 +11,7 @@ nextflow_process {
             process {
                 """
                 input[0] = tuple([id:"test_sample1", genome_id:"GCA_003719455.1", ena_tax:"default"], "${projectDir}/tests/reference_databases/test_sample1_tax_ranks.tsv")
+                input[1] = true
                 """
             }
         }

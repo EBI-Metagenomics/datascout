@@ -12,14 +12,16 @@ process ENA_RNA_CSV {
 
     input:
       tuple val(meta), path(tax_ranks)
+      val(order_by_smallest)
 
     output:
     tuple val(meta), path("${meta.genome_id}_ENA_filtered_rna.csv"), emit: rna_csv
 
     script:
     prefix = meta.genome_id
+    def order_by_smallest_arg = order_by_smallest ? '--select_smallest' : ''
     """
-    rna_seq.py --tax_file ${tax_ranks} --output_file "${prefix}_ENA_filtered_rna.csv" --rank ${meta.ena_tax}
+    rna_seq.py --tax_file ${tax_ranks} --output_file "${prefix}_ENA_filtered_rna.csv" --rank ${meta.ena_tax} ${order_by_smallest_arg}
     """
 }
 

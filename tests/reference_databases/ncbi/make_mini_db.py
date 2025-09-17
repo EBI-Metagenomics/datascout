@@ -9,8 +9,11 @@ import os
 
 def make_mini_db():
     db_file = os.path.join(script_dir, "mini_trypanosoma.sqlite")
+    db_pkl_file = os.path.join(script_dir, "mini_trypanosoma.sqlite.traverse.pkl")
     if os.path.exists(db_file):
         os.remove(db_file)
+    if os.path.exists(db_pkl_file):
+        os.remove(db_pkl_file)
 
     conn = sqlite3.connect(db_file)
     cur = conn.cursor()
@@ -70,6 +73,8 @@ nodes_file = os.path.join(script_dir, "nodes.dmp")
 names_file = os.path.join(script_dir, "names.dmp")
 merged_file = os.path.join(script_dir, "merged.dmp")
 taxdump = os.path.join(script_dir, "mini_taxdump.tar.gz")
+if os.path.exists(taxdump):
+    os.remove(taxdump)
 
 names, nodes = make_mini_db()
 make_nodes_dmp(nodes, nodes_file)

@@ -163,7 +163,7 @@ def main():
 
     if args.version:
         version = requests.get(VERSION_URL)
-        print(f"\tOrthoDB:{version.text.strip()}")
+        print(f"\tOrthoDB:{version.text.strip('"')}")
         exit(0)
 
     logging.basicConfig(level=logging.INFO)

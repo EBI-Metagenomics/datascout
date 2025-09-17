@@ -87,7 +87,7 @@ workflow DATASCOUT {
         GENOME_ASSEMBLY(genome_ch)
 
         // fetch ENA metadata
-        ENA_RNA_CSV(taxa_ch)
+        ENA_RNA_CSV(taxa_ch, params.order_runs_by_smallest)
 
         // modify meta
         ENA_RNA_CSV.out.rna_csv

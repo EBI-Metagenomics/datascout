@@ -26,12 +26,12 @@ def parse_taxa(taxa_file):
 import logging
 import query_ena_transcriptome
 
-def find_transcriptome_data(tax_ranks, preferred_rank=False):
+def find_transcriptome_data(tax_ranks, preferred_rank=False, order_by_smallest=False):
     """Use preferred rank if given by user. Iterate through taxa until transcriptome data is found."""
     
     if preferred_rank:
         taxid = next((taxid for taxid, rank in tax_ranks.items() if rank == preferred_rank), None)
-        ena = query_ena_transcriptome.EnaMetadata(taxid)
+        ena = query_ena_transcriptome.EnaMetadata(taxid, order_by_smallest)
         transciptome_metadata = ena.query_ena()
         if len(transciptome_metadata):
             return transciptome_metadata
@@ -39,7 +39,7 @@ def find_transcriptome_data(tax_ranks, preferred_rank=False):
             logging.info(f"No transcriptome data found at the preferred rank {preferred_rank}")
 
     for taxid, rank in tax_ranks.items():
-        ena = query_ena_transcriptome.EnaMetadata(taxid)
+        ena = query_ena_transcriptome.EnaMetadata(taxid, order_by_smallest)
         transciptome_metadata = ena.query_ena()
         if transciptome_metadata:
             return transciptome_metadata
@@ -58,6 +58,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "-r", "--rank", type=str, help="Preferred taxonomic rank to search for transcriptomic data", required=False
     )
+    parser.add_argument(
+        "-s", "--select_smallest", action='store_true', help="Order from smallest sequence file to largest file size", required=False, default=False
+    )
     args = parser.parse_args()
 
     if args.rank == "default":
@@ -66,7 +69,7 @@ if __name__ == "__main__":
         rank = args.rank
         
     taxa_dict = parse_taxa(args.tax_file)
-    transcriptome_metadata = find_transcriptome_data(taxa_dict, rank)
+    transcriptome_metadata = find_transcriptome_data(taxa_dict, rank, order_by_smallest=args.select_smallest)
 
     logging.info(f"Writing metadata to output file {args.output_file}")
     with open(args.output_file, mode='w', newline='') as outfile:

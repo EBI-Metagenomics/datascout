@@ -47,7 +47,7 @@ def calculate_read_length(base_count, read_count):
 # Sort output_keys by their maximum base_count in descending order
 
 class EnaMetadata:
-    def __init__(self, taxid):
+    def __init__(self, taxid, order_by_smallest=False):
         self.ena_base_url = "https://www.ebi.ac.uk/ena/portal/api/search"
         self.fields = """sample_accession,secondary_sample_accession,run_accession,study_accession,sample_title,
         experiment_title,instrument_platform,library_layout,read_count,base_count,fastq_aspera,fastq_ftp,fastq_md5"""
@@ -58,6 +58,7 @@ class EnaMetadata:
             "library_source": "TRANSCRIPTOMIC",
             "library_layout": "PAIRED"
         }
+        self.order_by_smallest = order_by_smallest
 
         join_queries = " AND ".join([f"{key}={value}" for key, value in self.queries.items()])
         taxid_query = f"tax_tree({self.taxid})"
@@ -131,8 +132,10 @@ class EnaMetadata:
         logging.info(f"{len(qc_set)} transcriptomes remained at taxid {self.taxid} after QC filters applied")
         if not len(qc_set):
             return []
-
-        sorted_data = sorted(qc_set, key=lambda x: int(x['base_count']), reverse=True)
+        if self.order_by_smallest:
+            sorted_data = sorted(qc_set, key=lambda x: int(x['base_count']))
+        else:
+            sorted_data = sorted(qc_set, key=lambda x: int(x['base_count']), reverse=True)
         
         grouped = {}
         reordered = []
