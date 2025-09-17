@@ -136,35 +136,32 @@ Optional columns
 # Outputs
 
 The outputs of the pipeline are as follows:
-```
-results
-├── GCA_003719455.1_default_rna_fastq_dir
-│   ├── SRR32368313_1.fastq
-│   └── SRR32368313_2.fastq
-├── GCA_003719455.1_ENA_filtered_rna.csv
-├── GCA_003719455.1_reheaded_assembly.fasta
-├── pipeline_info
-│   ├── execution_report.html
-│   ├── execution_timeline.html
-│   ├── execution_trace.txt
-│   ├── pipeline_dag.svg
-│   └── software_versions.yml
-├── test_sample1_orthodb_dir
-│   └── 5690_sequences
-│       └── combined_orthodb_5690.faa
-├── test_sample1_rfam_dir
-│   └── rfam_ids.txt
-├── test_sample1_tax_ranks.tsv
-├── test_sample1_uniprot_dir
-│   ├── 5693_uniprot_proteins.faa
-│   └── 5693_uniprot_raw.faa
-├── test_sample2_orthodb_dir
-│   └── 5690_sequences
-│       └── combined_orthodb_5690.faa
-├── test_sample2_rfam_dir
-│   └── rfam_ids.txt
-├── test_sample2_tax_ranks.tsv
-└── test_sample2_uniprot_dir
-    ├── 5654_uniprot_proteins.faa
-    └── 5654_uniprot_raw.faa
-```
+
+File ending **tax_ranks.tsv** per sample: Taxonomic lineage and corresponding taxids and ranks of the input taxid.
+
+File ending **reheaded_assembly.fasta**: Reformatted genome fasta file
+
+File ending **ENA_filtered_rna.csv**: One per unique genome ID. A list of matching transcriptomic reads in ENA and their metadata
+
+Folder ending **rna_fastq_dir**: Named as per the preferred max rank level provided in input (or "default")
+  - Contains unzipped fastq transcriptomic files
+
+Folder ending **orthodb_dir**: One per sample, and contains protein fasta files from orthoDB
+
+  - Subfolders per orthodb cluster
+
+Folder ending **rfam_dir**: One per sample, and contains rfam data
+
+  - Contains file **rfam_ids.txt** with a list of matching Rfam IDs
+
+Folder ending **uniprot_dir**: One per sample, and contains protein fasta files from UniProt
+
+  - Contains raw and reformatted protein fasta files named by taxid
+
+Folder **pipeline_info** : contains execution reports, and a software and database versions yaml file
+
+Optional outputs if sourmash flag is used:
+  - File ending **sourmash_gather.csv**: Output of sourmash containment of transcriptomic reads in the genome. Named as per the preferred max rank level provided in input (or "default")
+  - Folder **sourmash**:
+    - Contains sourmash sketch files for the genome and fastqs
+
