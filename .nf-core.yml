@@ -28,7 +28,7 @@ lint:
 nf_core_version: 2.14.1
 repository_type: pipeline
 template:
-  prefix: Ensembl
+  prefix: ebi-metagenomics
   skip:
   - ci
   - github_badges
