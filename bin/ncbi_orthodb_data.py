@@ -10,11 +10,10 @@ import time
 import glob
 from Bio import SeqIO
 
-logging.basicConfig(level=logging.INFO)
-
 #   set all requests static params beforehand
 PARSE_URL = "https://data.orthodb.org/current/fasta?"
 SEARCH_URL = "https://data.orthodb.org/current/search?"
+VERSION_URL = "https://data.orthodb.org/current/orthodb_release_id"
 
 SEARCH_URL_ARGS = {
     "universal": "0.9",
@@ -154,7 +153,23 @@ def main():
     parser.add_argument(
         "-o", "--output_dir", type=str, help="output directory"
     )
+    parser.add_argument(
+        "--max_clusters", type=int, default=None, help="Limit the number of clusters to fetch (mainly for testing)"
+    )
+    parser.add_argument(
+        "--version", action="store_true", help="Show orthodb version number and exit"
+    )
     args = parser.parse_args()
+
+    if args.version:
+        version = requests.get(VERSION_URL)
+        print(f"\tOrthoDB:{version.text.strip('"')}")
+        return
+
+    logging.basicConfig(level=logging.INFO)
+
+    if not args.tax_file or not args.output_dir:
+        parser.error("--tax_file and --output_dir are required unless --version is specified")
 
     if args.lineage_max == "default":
         max_lineage = None
@@ -167,7 +182,9 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
 
     if clusters:
-    # Chop the data in small blocks and query them with a wait intervall to avoid spaming orthoDB
+        if args.max_clusters:
+            logging.info(f"Limit to first {args.max_clusters} clusters")
+            clusters = clusters[:args.max_clusters]
         num_clusters = len(clusters)
         start = 0
         end = MAX_NB_QUERIES_PER_BLOCK

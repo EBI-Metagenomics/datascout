@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an idea for the Ensembl/datascout pipeline
+description: Suggest an idea for the ebi-metagenomics/datascout pipeline
 labels: enhancement
 body:
   - type: textarea

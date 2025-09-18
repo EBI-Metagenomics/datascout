@@ -1,0 +1,41 @@
+{
+    "Should run datascout pipeline end-to-end with test data": {
+        "content": [
+            8,
+            [
+                "GCA_003719455.1_ENA_filtered_rna.csv",
+                "GCA_003719455.1_default_rna_fastq_dir",
+                "GCA_003719455.1_default_rna_fastq_dir/SRR25010087_1.fastq",
+                "GCA_003719455.1_default_rna_fastq_dir/SRR25010087_2.fastq",
+                "GCA_003719455.1_reheaded_assembly.fasta",
+                "pipeline_info",
+                "test_sample1_orthodb_dir",
+                "test_sample1_orthodb_dir/5690_sequences",
+                "test_sample1_orthodb_dir/5690_sequences/combined_orthodb_5690.faa",
+                "test_sample1_rfam_dir",
+                "test_sample1_rfam_dir/rfam_ids.txt",
+                "test_sample1_tax_ranks.tsv",
+                "test_sample1_uniprot_dir",
+                "test_sample1_uniprot_dir/5693_uniprot_proteins.faa",
+                "test_sample1_uniprot_dir/5693_uniprot_raw.faa",
+                "versions.yml"
+            ],
+            [
+                "GCA_003719455.1_ENA_filtered_rna.csv:md5,15cad058a4845db7b543f89e6bb52ebb",
+                "SRR25010087_1.fastq:md5,717e8d1c6558ef61a60b08296f4c8b3a",
+                "SRR25010087_2.fastq:md5,c53cfbdc10ea4bde941845452ab5c2b9",
+                "GCA_003719455.1_reheaded_assembly.fasta:md5,fa4c17141ca1ffcae42f9e181946d3f4",
+                "combined_orthodb_5690.faa:md5,991dcb1c20509697a7c971e259302e39",
+                "test_sample1_tax_ranks.tsv:md5,b06eebb92f06f93c2894fb5f4e685d13",
+                "5693_uniprot_proteins.faa:md5,79ab68a535498bbee3ecd193487e3fc6",
+                "5693_uniprot_raw.faa:md5,380a59819358217b2f99a6538ba4baa4",
+                "versions.yml:md5,a91cee1595a147f0f330b15cc937f43a"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.04.3"
+        },
+        "timestamp": "2025-09-17T16:10:32.865209"
+    }
+}

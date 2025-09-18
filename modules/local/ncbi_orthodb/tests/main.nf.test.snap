@@ -1,0 +1,28 @@
+{
+    "Should run without failures": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_sample1",
+                        "genome_id": "GCA_003719455.1",
+                        "ena_tax": "default"
+                    },
+                    [
+                        [
+                            "combined_orthodb_5690.faa:md5,adc648b160c49de7c990642e76cb0b8b"
+                        ]
+                    ]
+                ]
+            ],
+            [
+                "versions.yml:md5,ff40358b55a64ada8f4434e08b8d9815"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.04.3"
+        },
+        "timestamp": "2025-09-10T17:32:27.922539"
+    }
+}

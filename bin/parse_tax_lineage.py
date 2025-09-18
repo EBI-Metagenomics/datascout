@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 
+import ete3
 from ete3 import NCBITaxa
 import argparse
+import os
+from datetime import datetime
 
 def get_tax_lineage(taxid, outfile, db_path=None, taxdump=None):
 
     if db_path and taxdump:
         ncbi = NCBITaxa(dbfile=db_path, taxdump_file=taxdump)
+    elif db_path:
+        ncbi = NCBITaxa(dbfile=db_path)
     else:
         ncbi = NCBITaxa()    
 
@@ -38,7 +43,21 @@ def main():
     parser.add_argument(
         "-o", "--output", type=str, help="output file name"
     )
+    parser.add_argument(
+        "-v", "--version", action="store_true"
+    )
     args = parser.parse_args()
+
+    if args.db_path and args.taxdump:
+        db_date = datetime.fromtimestamp(os.path.getmtime(args.taxdump)).strftime('%Y-%m-%d')
+    else:
+        db_date = datetime.now().strftime('%Y-%m-%d')
+
+    if args.version:
+        print(f"\tete3: {ete3.__version__}")
+        print(f"\tNCBI taxdump downloaded on: {db_date}")
+        return
+    
     get_tax_lineage(args.taxid, args.output, args.db_path, args.taxdump)
 
 
