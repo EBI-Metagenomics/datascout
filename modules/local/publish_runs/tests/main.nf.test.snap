@@ -1,0 +1,23 @@
+{
+    "Should run without failures": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "GCA_003719455.1",
+                        "ena_tax": "default"
+                    },
+                    [
+                        "SRRtest_1.fastq:md5,8ff9c17b0f3e0ada46c3f71be706c52f",
+                        "SRRtest_2.fastq:md5,1df6c4c59552d5fe46879e6b90317d3a"
+                    ]
+                ]
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "25.04.3"
+        },
+        "timestamp": "2025-09-10T19:36:29.592523"
+    }
+}

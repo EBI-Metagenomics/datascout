@@ -1,59 +1,27 @@
 nextflow_process {
 
     name "Test Process NCBI_ORTHODB"
-    script "../main.nf"
+    script "modules/local/ncbi_orthodb/main.nf"
     process "NCBI_ORTHODB"
 
-    tag "modules"
-    tag "modules_datascout"
-    tag "datascout"
-    tag "ncbi_orthodb"
-
-    test("test - ncbi_orthodb") {
+    test("Should run without failures") {
 
         when {
             process {
                 """
-                input[0] = [
-                    file("${projectDir}/assets/test_data/genomes_test_list.csv", checkIfExists: true)
-                ]
-                input[1] = file("${projectDir}/assets/test_data/out_test_dir")
-                input[2] = file("${projectDir}/assets/test_data/out_test_dir/ncbi_orthodb")
+                input[0] = tuple([id:"test_sample1", genome_id:"GCA_003719455.1", ena_tax:"default"], "$projectDir/tests/reference_databases/test_sample1_tax_ranks.tsv", "default")
                 """
             }
         }
 
         then {
-            assertAll(
-                { assert process.success }
-                //,
-                //{ assert path(process.out.genomes).text.contains(" 'level_1_tax': 5782") }
-            )
-        }
-    }
-
-    test("test - ncbi_orthodb - stub") {
-        options '-stub'
-
-        when {
-            process {
-                """
-                input[0] = [
-                    file("${projectDir}/assets/test_data/genomes_test_list.csv", checkIfExists: true)
-                ]
-                input[1] = file("${projectDir}/assets/test_data/out_test_dir")
-                input[2] = file("${projectDir}/assets/test_data/out_test_dir/ncbi_orthodb")
-                """
-            }
+            assert process.success
+            assert snapshot(
+                process.out.orthodb_results,
+                process.out.versions
+            ).match()
         }
 
-        then {
-            assertAll(
-                { assert process.success }
-                //1,
-                //{ assert snapshot(process.out).match() }
-            )
-        }
     }
 
 }

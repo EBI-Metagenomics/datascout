@@ -1,0 +1,78 @@
+nextflow_pipeline {
+
+    name "Test complete datascout pipeline"
+    script "main.nf"
+
+    test("Should run datascout pipeline end-to-end with test data") {
+
+        setup {
+            // Create mini NCBI database for testing
+            "${projectDir}/tests/reference_databases/ncbi/make_mini_db.py".execute().waitFor()
+        }
+
+        when {
+            params {
+                // Use the example samplesheet from assets
+                samplesheet = "${projectDir}/assets/samplesheet.csv"
+                
+                // Use the mini test databases created by setup
+                taxdump = "${projectDir}/tests/reference_databases/ncbi/mini_taxdump.tar.gz"
+                sqlite = "${projectDir}/tests/reference_databases/ncbi/mini_trypanosoma.sqlite"
+                
+                // Set small for fast test
+                max_runs = 1
+                max_orthodb_clusters = 1
+                order_runs_by_smallest = true // download only the smallest run files
+                sourmash = false // sourmash will take too long
+                
+                // Use test output directory
+                outdir = "$outputDir"
+            }
+        }
+
+        then {
+            def stable_name = getAllFilesFromDir(
+                params.outdir, 
+                relative: true, 
+                includeDir: true, 
+                ignore: [
+                    'pipeline_info/*',
+                ]
+            )
+            def stable_path = getAllFilesFromDir(params.outdir, ignore: ['pipeline_info/*', 'test_sample1_rfam_dir/*'])
+            assertAll(
+                { assert workflow.success },
+                { assert path("$outputDir").exists() },
+                
+                // Check pipeline_info directory and files
+                { assert path("$outputDir/pipeline_info").exists() },
+                { assert path("$outputDir/pipeline_info/software_versions.yml").exists() },
+                
+                { assert path("$outputDir").list().any { it.fileName.toString().endsWith("_reheaded_assembly.fasta") } },
+                { assert path("$outputDir").list().any { it.fileName.toString().endsWith("_ENA_filtered_rna.csv") } },
+                { assert path("$outputDir").list().any { it.fileName.toString().endsWith("_default_rna_fastq_dir") } },
+                { assert path("$outputDir/GCA_003719455.1_default_rna_fastq_dir").list().size() == 2 },
+                { assert path("$outputDir/test_sample1_tax_ranks.tsv").exists() },
+                
+                { assert path("$outputDir/test_sample1_orthodb_dir").exists() },
+                { assert path("$outputDir/test_sample1_orthodb_dir").list().size() > 0 },
+                
+                { assert path("$outputDir/test_sample1_uniprot_dir").exists() },
+                { assert path("$outputDir/test_sample1_uniprot_dir").list().any { it.fileName.toString().endsWith("_uniprot_proteins.faa") } },
+                { assert path("$outputDir/test_sample1_uniprot_dir").list().any { it.fileName.toString().endsWith("_uniprot_raw.faa") } },
+                
+                { assert path("$outputDir/test_sample1_rfam_dir").exists() },
+                { assert path("$outputDir/test_sample1_rfam_dir/rfam_ids.txt").exists() },
+
+                { assert snapshot(
+                    // Number of tasks
+                    workflow.trace.succeeded().size(),
+                    // All stable path name
+                    stable_name,
+                    // All files with stable contents
+                    stable_path,
+                ).match() }
+            )
+        }
+    }
+}
