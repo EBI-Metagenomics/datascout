@@ -96,11 +96,11 @@
         },
         "max_orthodb_clusters": {
           "type": ["integer", "null"],
-          "minimum": 1,
+          "minimum": 0,
           "description": "Limit the number of OrthoDB clusters to fetch (mainly for testing)",
           "help_text": "When set, limits the number of OrthoDB clusters fetched per sample. Useful for testing.",
           "fa_icon": "fas fa-hashtag",
-          "default": null
+          "default": 0
         },
         "order_runs_by_smallest": {
           "type": ["boolean", "null"],
@@ -108,7 +108,7 @@
           "help_text": "When enabled, the pipeline will prioritize smaller fastq files when selecting transcriptome data from ENA. Useful for testing",
           "fa_icon": "fas fa-hashtag",
           "default": false
-        }        
+        }
       }
     }
   }

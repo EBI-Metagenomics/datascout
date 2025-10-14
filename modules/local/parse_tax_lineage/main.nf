@@ -17,16 +17,18 @@ process TAX_LINEAGE {
 
     script:
     prefix = meta.id
+    def copy_db = db_path != "" ? "cp -r ${db_path} ./" : ""
+    def taxdump_arg = taxdump != "" ? "--taxdump \"${taxdump}\"" : ""
+    def db_path_arg = db_path != "" ? "--db_path \"${db_path}\"" : ""
     """
-    cp -r ${db_path} ./
-    parse_tax_lineage.py --taxid ${taxid} --output ${prefix}_tax_ranks.tsv --taxdump "${taxdump}" --db_path "${db_path}"
+    ${copy_db}
+    parse_tax_lineage.py --taxid ${taxid} --output ${prefix}_tax_ranks.tsv ${taxdump_arg} ${db_path_arg}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-    \$( parse_tax_lineage.py --taxdump "${taxdump}" --db_path "${db_path}" --version 2>&1 )
+    \$( parse_tax_lineage.py ${taxdump_arg} ${db_path_arg} --version 2>&1 )
       Python: \$(python --version 2>&1 | sed 's/Python //g')
     END_VERSIONS
     """
 }
-
 // Get taxonomic lineage and ranks of query genome from NCBI
