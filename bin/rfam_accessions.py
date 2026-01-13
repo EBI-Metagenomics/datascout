@@ -47,7 +47,7 @@ def query_rfam(connection, tax_ranks, config_file_path, preferred_rank=None):
     SELECT distinct family_ncbi.rfam_acc 
     FROM family_ncbi, taxonomy 
     WHERE family_ncbi.ncbi_id = taxonomy.ncbi_id 
-    AND species LIKE %s
+    AND tax_string LIKE %s
     """
 
     if preferred_rank:
