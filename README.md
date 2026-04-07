@@ -1,7 +1,7 @@
 # Introduction
 
 **ebi-metagenomics/datascout** is a pipeline to query and fetch protein, RNA and transcriptomic evidence to support eukaryotic gene annotation, from different data archives: European Nucleotide Archive (ENA), Rfam, UniProt and OrthoDB
- 
+
 The pipeline allows for bespoke requests such as specificity of taxonomic rank queried, evidence levels and volume of outputs.
 
 The steps of the pipeline are outlined in the [documentation](docs/README.md).
@@ -57,7 +57,7 @@ Per grouping it queries ENA for transcriptomic reads matching the most specific 
 The results are reordered with the following critera to try and download the most diverse set of reads possible (i.e. not all reads from the same sample/study):
 - Check data is paired and with two files
 - filter short sequences read length <75
-- sort by descending base count 
+- sort by descending base count
 - group by sample name and cycle through alternating the names
 
 Downloads fastq files for the used specified number of max runs and uncompresses the files
@@ -98,6 +98,9 @@ DATABASE OPTIONS:
 PROCESSING OPTIONS:
   --max_runs <int>        Maximum number of runs to process.
                           [default: 100, min: 1, max: 10000]
+  --download-rna-fastq    Enable transcriptomic FASTQ download and publishing.
+                          Used only when --sourmash is false. Ignored when
+                          --sourmash is true. [default: true]
   --max_orthodb_clusters <int> Maximum number of clusters to download from orthodb.
                           [default: 0 (as many as available)]
   --order_runs_by_smallest <boolean> Select smallest transcriptome fastq files first
@@ -114,7 +117,7 @@ PROCESSING OPTIONS:
 The samplesheet is a comma separated file with the following columns. Please include a blank field for the optional columns even if they are unused.
 You can use the [example samplesheet](assets/samplesheet.csv) to guide you.
 
-Required columns 
+Required columns
 
 | Column      | Type    | Description                                                                  |
 | ----------- | ------- | ---------------------------------------------------------------------------- |

@@ -6,8 +6,8 @@
 
 include { paramsSummaryLog } from 'plugin/nf-schema'
 
-/************************** 
-* INPUT CHANNELS 
+/**************************
+* INPUT CHANNELS
 **************************/
 
 include { samplesheetToList } from 'plugin/nf-schema'
@@ -36,7 +36,7 @@ include { SOURMASH                   } from '../subworkflows/local/sourmash_filt
 workflow DATASCOUT {
 
     main:
-    
+
         log.info paramsSummaryLog(workflow)
 
         // Initialize versions channel
@@ -55,7 +55,7 @@ workflow DATASCOUT {
             }
             .set { input }
 
-        // get taxonomy lineage 
+        // get taxonomy lineage
         TAX_LINEAGE(input.taxid, params.taxdump, params.sqlite)
         taxa_ch = TAX_LINEAGE.out.tax_ranks
         ch_versions = ch_versions.mix(TAX_LINEAGE.out.versions.first())
@@ -98,13 +98,13 @@ workflow DATASCOUT {
                 [ new_meta, path ]
             }
             .set { ena_metadata_ch }
-        
+
         // group by genome_id and ena_tax and select first metadata path - they should be identical
         ena_metadata_ch
             .groupTuple()
-            .map { metadata -> 
-                def meta = metadata[0]   
-                def paths = metadata[1] 
+            .map { metadata ->
+                def meta = metadata[0]
+                def paths = metadata[1]
                 [meta, paths.first()]
             }
             .set { ena_metadata_grouped }
@@ -112,6 +112,9 @@ workflow DATASCOUT {
         // continue processing with the grouped metadata and CSV file path
 
         if ( params.sourmash ) {
+            if ( !params.download_rna_fastq ) {
+                log.info 'Ignoring --download-rna-fastq because --sourmash is true.'
+            }
 
             SOURMASH(
                 ena_metadata_grouped,
@@ -123,15 +126,16 @@ workflow DATASCOUT {
         }
 
         else {
+            if ( params.download_rna_fastq ) {
+                DOWNLOAD_FASTQ_FILES(
+                    ena_metadata_grouped,
+                    1,
+                    params.max_runs
+                )
+                ch_versions = ch_versions.mix(DOWNLOAD_FASTQ_FILES.out.versions.first())
 
-            DOWNLOAD_FASTQ_FILES(
-                ena_metadata_grouped,
-                1,
-                params.max_runs
-            )
-            ch_versions = ch_versions.mix(DOWNLOAD_FASTQ_FILES.out.versions.first())
-
-            PUBLISH_RUNS(DOWNLOAD_FASTQ_FILES.out.fastq_files)
+                PUBLISH_RUNS(DOWNLOAD_FASTQ_FILES.out.fastq_files)
+            }
         }
 
         // Collect and concatenate all versions

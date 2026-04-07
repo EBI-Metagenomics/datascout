@@ -80,6 +80,13 @@
           "help_text": "Limits the number of sequencing runs that will be downloaded and processed",
           "fa_icon": "fas fa-hashtag"
         },
+        "download_rna_fastq": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable transcriptomic FASTQ download and publishing",
+          "help_text": "Used only when sourmash is disabled. If sourmash is enabled, this flag is ignored.",
+          "fa_icon": "fas fa-download"
+        },
         "sourmash": {
           "type": "boolean",
           "default": false,
