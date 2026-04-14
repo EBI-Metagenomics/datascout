@@ -17,9 +17,9 @@ process TAX_LINEAGE {
 
     script:
     prefix = meta.id
-    def copy_db = db_path != "" ? "cp -r ${db_path} ./" : ""
+    def copy_db = db_path != "" ? "cp -r ${db_path} local_taxa.sqlite" : ""
     def taxdump_arg = taxdump != "" ? "--taxdump \"${taxdump}\"" : ""
-    def db_path_arg = db_path != "" ? "--db_path \"${db_path}\"" : ""
+    def db_path_arg = db_path != "" ? "--db_path local_taxa.sqlite" : ""
     """
     ${copy_db}
     parse_tax_lineage.py --taxid ${taxid} --output ${prefix}_tax_ranks.tsv ${taxdump_arg} ${db_path_arg}
