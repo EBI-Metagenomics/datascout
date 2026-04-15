@@ -19,7 +19,7 @@ nextflow_process {
             assert process.success
             assert snapshot(
                 process.out.uniprot_results,
-                process.out.versions
+                path(process.out.versions.get(0)).yaml
             ).match()
         }
 
@@ -40,7 +40,7 @@ nextflow_process {
             assert process.success
             assert snapshot(
                 process.out.uniprot_results,
-                process.out.versions
+                path(process.out.versions.get(0)).yaml
             ).match()
         }
 

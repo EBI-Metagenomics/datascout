@@ -10,8 +10,8 @@ nextflow_process {
             process {
                 """
                 input[0] = tuple(
-                [id:"GCA_003719455.1", ena_tax:"default"], 
-                "$projectDir/tests/reference_databases/GCA_003719455.1.sig", 
+                [id:"GCA_003719455.1", ena_tax:"default"],
+                "$projectDir/tests/reference_databases/GCA_003719455.1.sig",
                 ["$projectDir/tests/reference_databases/SRR32368313.sig"]
                 )
                 """
@@ -22,7 +22,7 @@ nextflow_process {
             assert process.success
             assert snapshot(
                 process.out.gather_csv,
-                process.out.versions
+                path(process.out.versions.get(0)).yaml
             ).match()
         }
 
