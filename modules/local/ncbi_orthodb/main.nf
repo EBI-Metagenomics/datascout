@@ -19,7 +19,7 @@ process NCBI_ORTHODB {
       path("versions.yml"), emit: versions
 
     script:
-    def max_clusters_arg = max_clusters ? "--max_clusters ${max_clusters}" : ""
+    def max_clusters_arg = max_clusters && max_clusters >0 ? "--max_clusters ${max_clusters}" : ""
     """
     mkdir -p ${meta.id}_orthodb_dir
     ncbi_orthodb_data.py --tax_file ${tax_ranks} --lineage_max ${max_rank} --output "${meta.id}_orthodb_dir" ${max_clusters_arg}

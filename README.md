@@ -99,7 +99,7 @@ PROCESSING OPTIONS:
   --max_runs <int>        Maximum number of runs to process.
                           [default: 100, min: 1, max: 10000]
   --max_orthodb_clusters <int> Maximum number of clusters to download from orthodb.
-                          [default: null (as many as available)]
+                          [default: 0 (as many as available)]
   --order_runs_by_smallest <boolean> Select smallest transcriptome fastq files first
                           [default: false (largest to smallest)]
   --sourmash              Enable sourmash filtering.
