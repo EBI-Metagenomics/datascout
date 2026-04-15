@@ -25,10 +25,24 @@ nextflow_process {
         then {
             assertAll{
                 { assert process.success }
-                { assert snapshot(
-                    process.out.tax_ranks,
-                    path(process.out.versions.get(0)).yaml
-                ).match()   }
+                {
+                    def versions = path(process.out.versions.get(0)).yaml
+
+                    // Validate date field exists and has correct format
+                    assert versions["TAX_LINEAGE"]["NCBI taxdump downloaded on"] ==~ /\d{4}-\d{2}-\d{2}/
+
+                    // Create version map without dynamic date field
+                    def stableVersions = [
+                        "TAX_LINEAGE": versions["TAX_LINEAGE"].findAll { k, v ->
+                            k != "NCBI taxdump downloaded on"
+                        }
+                    ]
+
+                    assert snapshot(
+                        process.out.tax_ranks,
+                        stableVersions
+                    ).match()
+                }
             }
         }
     }

@@ -17,8 +17,51 @@ nextflow_process {
         }
 
         then {
-            assert process.success
-            assert snapshot(process.out.rna_csv).match()
+            assertAll(
+                { assert process.success },
+                {
+                    // Get the CSV file
+                    def csvFile = path(process.out.rna_csv.get(0)[1])
+                    def lines = csvFile.readLines()
+
+                    // Check file is not empty
+                    assert lines.size() > 1 : "CSV should have header and data rows"
+
+                    // Check header columns
+                    def header = lines[0]
+                    def expectedColumns = [
+                        'run_accession',
+                        'sample_accession',
+                        'secondary_sample_accession',
+                        'study_accession',
+                        'sample_title',
+                        'experiment_title',
+                        'instrument_platform',
+                        'library_layout',
+                        'read_count',
+                        'base_count',
+                        'fastq_aspera',
+                        'fastq_ftp',
+                        'fastq_md5'
+                    ]
+
+                    expectedColumns.each { column ->
+                        assert header.contains(column) : "CSV header should contain column: ${column}"
+                    }
+
+                    // Check for specific accessions
+                    def csvContent = csvFile.text
+                    assert csvContent.contains('SRR32368270') : "CSV should contain accession SRR32368270"
+                    assert csvContent.contains('SRR25010087') : "CSV should contain accession SRR25010087"
+
+                },
+                {
+                    // Snapshot only versions (not the CSV content because it can change)
+                    assert snapshot(
+                        path(process.out.versions.get(0)).yaml
+                    ).match()
+                }
+            )
         }
 
     }

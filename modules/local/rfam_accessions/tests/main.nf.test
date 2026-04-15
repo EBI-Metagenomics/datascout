@@ -16,11 +16,30 @@ nextflow_process {
         }
 
         then {
-            assert process.success
-            assert snapshot(
-                process.out.rfam_results,
-                path(process.out.versions.get(0)).yaml
-            ).match()
+            assertAll(
+                { assert process.success },
+                {
+                    // Validate Rfam IDs content
+                    def rfamDir = process.out.rfam_results.get(0)[1]
+                    def rfamIdsFile = path("${rfamDir}/rfam_ids.txt")
+                    def lines = rfamIdsFile.readLines()
+
+                    // Format validation
+                    assert lines.size() > 0
+                    assert lines.every { it ==~ /RF\d{5}/ }
+
+                    // Check for specific Rfam accessions
+                    assert lines.contains('RF01554')
+                    assert lines.contains('RF01548')
+                    assert lines.contains('RF01558')
+                },
+                {
+                    // Snapshot for versions only (not the Rfam IDs content because it can change)
+                    assert snapshot(
+                        path(process.out.versions.get(0)).yaml
+                    ).match()
+                }
+            )
         }
 
     }
