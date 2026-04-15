@@ -138,7 +138,7 @@ def main():
 
     if args.version:
         version = get_uniprot_version()
-        print(f"\tUniProt: {version}")
+        print(f"UniProt: {version}")
         return  
 
     logging.basicConfig(level=logging.INFO)

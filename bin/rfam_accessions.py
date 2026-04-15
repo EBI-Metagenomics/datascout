@@ -127,8 +127,8 @@ def main():
     connection = connect_to_rfam(args.config)
     if args.version:
         version, date = get_rfam_version(connection)
-        print(f"\tRfam: {version}")
-        print(f"\tRfam release date: {date}")
+        print(f"Rfam: {version}")
+        print(f"Rfam release date: {date}")
         return
 
     logging.basicConfig(level=logging.INFO)
