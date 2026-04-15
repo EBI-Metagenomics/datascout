@@ -43,7 +43,7 @@ def query_rfam(connection, tax_ranks, config_file_path, preferred_rank=None):
 
     # Create a cursor object to interact with the database
     cursor = connection.cursor()
-    families_sql_query = f"""
+    families_sql_query = """
     SELECT distinct family_ncbi.rfam_acc 
     FROM family_ncbi, taxonomy 
     WHERE family_ncbi.ncbi_id = taxonomy.ncbi_id 
@@ -59,7 +59,7 @@ def query_rfam(connection, tax_ranks, config_file_path, preferred_rank=None):
             cursor.close()
             connection.close()
             return None
-        rfam_results = set(row[0] for row in cursor)
+        rfam_results = set(row[0] for row in results)
         logging.info(f"{len(rfam_results)} found at rank {preferred_rank}")
         cursor.close()
         connection.close()
@@ -74,7 +74,7 @@ def query_rfam(connection, tax_ranks, config_file_path, preferred_rank=None):
                 cursor.execute(families_sql_query, f"%{tax_name}%")
                 rfam_results = {row[0] for row in cursor.fetchall()}
                 families.update(rfam_results)
-                logging.info(f"total families_count after searcing rank {rank}: {len(families)}")
+                logging.info(f"total families_count after searching rank {rank}: {len(families)}")
             else:
                 if len(families) < 1:
                     logging.info("No families found up to rank family")
