@@ -124,18 +124,15 @@ workflow DATASCOUT {
             )
             ch_versions = ch_versions.mix(SOURMASH.out.versions.first())
         }
+        else if (params.download_rna_fastq) {
+            DOWNLOAD_FASTQ_FILES(
+                ena_metadata_grouped,
+                1,
+                params.max_runs
+            )
+            ch_versions = ch_versions.mix(DOWNLOAD_FASTQ_FILES.out.versions.first())
 
-        else {
-            if ( params.download_rna_fastq ) {
-                DOWNLOAD_FASTQ_FILES(
-                    ena_metadata_grouped,
-                    1,
-                    params.max_runs
-                )
-                ch_versions = ch_versions.mix(DOWNLOAD_FASTQ_FILES.out.versions.first())
-
-                PUBLISH_RUNS(DOWNLOAD_FASTQ_FILES.out.fastq_files)
-            }
+            PUBLISH_RUNS(DOWNLOAD_FASTQ_FILES.out.fastq_files)
         }
 
         // Collect and concatenate all versions
