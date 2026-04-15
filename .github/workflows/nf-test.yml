@@ -1,0 +1,96 @@
+name: nf-test
+
+on:
+  pull_request:
+    branches:
+      - master
+      - dev
+  push:
+    branches:
+      - master
+      - dev
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  checks: write
+  pull-requests: write
+
+env:
+  NXF_ANSI_LOG: false
+
+jobs:
+  test:
+    name: Run nf-test (${{ matrix.nextflow_version }})
+    runs-on: ubuntu-latest
+    env:
+      NFT_WORKDIR: ${{ github.workspace }}/.nf-test
+
+    strategy:
+      fail-fast: false
+      matrix:
+        nextflow_version:
+          - "25.04.1"
+
+    steps:
+      - name: Check out pipeline code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Nextflow
+        uses: nf-core/setup-nextflow@v2
+        with:
+          version: ${{ matrix.nextflow_version }}
+
+      - name: Install nf-test
+        uses: nf-core/setup-nf-test@v1
+        with:
+          version: "0.9.0"
+
+      - name: Cache Nextflow dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nextflow/assets
+            ~/.nextflow/plugins
+          key: nextflow-${{ runner.os }}-${{ hashFiles('**/nextflow.config') }}
+          restore-keys: |
+            nextflow-${{ runner.os }}-
+
+      - name: Run nf-test
+        id: run_nf_test
+        run: |
+          nf-test test \
+            --tag '!download_fastq_files' \
+            --profile docker,test \
+            --junitxml test-results.xml \
+            --verbose
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          check_name: nf-test Results (${{ matrix.nextflow_version }})
+          files: test-results.xml
+          comment_mode: off
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nf-test-results-${{ matrix.nextflow_version }}
+          path: |
+            test-results.xml
+            ${{ github.workspace }}/.nf-test/
