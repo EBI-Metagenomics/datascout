@@ -26,8 +26,9 @@ process TAX_LINEAGE {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-    \$( parse_tax_lineage.py ${taxdump_arg} ${db_path_arg} --version 2>&1 )
-      Python: \$(python --version 2>&1 | sed 's/Python //g')
+        \$(parse_tax_lineage.py ${taxdump_arg} ${db_path_arg} --version 2>&1 | grep "ete3:")
+        \$(parse_tax_lineage.py ${taxdump_arg} ${db_path_arg} --version 2>&1 | grep "NCBI taxdump downloaded on:")
+        Python: \$(python --version 2>&1 | sed 's/Python //g')
     END_VERSIONS
     """
 }

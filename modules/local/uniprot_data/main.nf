@@ -25,8 +25,8 @@ process UNIPROT_DATA {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-    \$( uniprot_data.py --version 2>&1 )
-      Python: \$(python --version 2>&1 | sed 's/Python //g')
+        \$(uniprot_data.py --version 2>&1)
+        Python: \$(python --version 2>&1 | sed 's/Python //g')
     END_VERSIONS
     """
 }
