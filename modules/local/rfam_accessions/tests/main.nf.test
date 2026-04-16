@@ -3,6 +3,8 @@ nextflow_process {
     name "Test Process RFAM_ACCESSIONS"
     script "modules/local/rfam_accessions/main.nf"
     process "RFAM_ACCESSIONS"
+    tag "module"
+    tag "rfam_accessions"
 
     test("Should run without failures") {
 

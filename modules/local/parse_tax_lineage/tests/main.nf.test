@@ -3,6 +3,8 @@ nextflow_process {
     name "Test Process TAX_LINEAGE"
     script "modules/local/parse_tax_lineage/main.nf"
     process "TAX_LINEAGE"
+    tag "module"
+    tag "parse_tax_lineage"
 
     test("Should run without failures") {
 

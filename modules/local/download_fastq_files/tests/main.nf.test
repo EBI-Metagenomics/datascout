@@ -3,6 +3,8 @@ nextflow_process {
     name "Test Process DOWNLOAD_FASTQ_FILES"
     script "modules/local/download_fastq_files/main.nf"
     process "DOWNLOAD_FASTQ_FILES"
+    tag "module"
+    tag "download_fastq_files"
 
     test("Should run without failures") {
 

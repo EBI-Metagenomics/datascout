@@ -3,6 +3,8 @@ nextflow_process {
     name "Test Process GENOME_ASSEMBLY"
     script "modules/local/genome_assembly/main.nf"
     process "GENOME_ASSEMBLY"
+    tag "module"
+    tag "genome_assembly"
 
     test("Should run without failures") {
 

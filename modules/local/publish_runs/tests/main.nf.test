@@ -3,6 +3,8 @@ nextflow_process {
     name "Test Process PUBLISH_RUNS"
     script "modules/local/publish_runs/main.nf"
     process "PUBLISH_RUNS"
+    tag "module"
+    tag "publish_runs"
 
     test("Should run without failures") {
 
