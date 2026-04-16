@@ -17,8 +17,7 @@
                 "test_sample1_tax_ranks.tsv",
                 "test_sample1_uniprot_dir",
                 "test_sample1_uniprot_dir/5693_uniprot_proteins.faa",
-                "test_sample1_uniprot_dir/5693_uniprot_raw.faa",
-                "versions.yml"
+                "test_sample1_uniprot_dir/5693_uniprot_raw.faa"
             ],
             [
                 "SRR25010087_1.fastq:md5,717e8d1c6558ef61a60b08296f4c8b3a",
@@ -27,14 +26,13 @@
                 "combined_orthodb_5690.faa:md5,991dcb1c20509697a7c971e259302e39",
                 "test_sample1_tax_ranks.tsv:md5,b06eebb92f06f93c2894fb5f4e685d13",
                 "5693_uniprot_proteins.faa:md5,f2c05ee22ed44547d8403629c6f8c462",
-                "5693_uniprot_raw.faa:md5,8d194efff890c4fd722aef97487198a9",
-                "versions.yml:md5,594c94bbef6f6fdb5db7c2d5901d0c12"
+                "5693_uniprot_raw.faa:md5,8d194efff890c4fd722aef97487198a9"
             ]
         ],
         "meta": {
             "nf-test": "0.9.0",
             "nextflow": "25.04.1"
         },
-        "timestamp": "2026-04-15T10:40:10.037915"
+        "timestamp": "2026-04-16T10:54:57.707605"
     }
 }

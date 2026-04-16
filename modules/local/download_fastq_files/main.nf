@@ -11,13 +11,13 @@ process DOWNLOAD_FASTQ_FILES {
     tag "${meta}"
 
     input:
-      tuple val(meta), path(ena_metadata)
-      val(start_line)
-      val(num_lines)
+    tuple val(meta), path(ena_metadata)
+    val(start_line)
+    val(num_lines)
 
     output:
-      tuple val(meta), path("*fastq"), emit: fastq_files
-      path("versions.yml"), emit: versions
+    tuple val(meta), path("*fastq"), emit: fastq_files
+    path("versions.yml"), emit: versions
 
     script:
     """
@@ -25,6 +25,6 @@ process DOWNLOAD_FASTQ_FILES {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-      Python: \$(python --version 2>&1 | sed 's/Python //g')
+        Python: \$(python --version 2>&1 | sed 's/Python //g')
     """
 }
