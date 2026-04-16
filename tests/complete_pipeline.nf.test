@@ -1,12 +1,11 @@
 nextflow_pipeline {
 
-    name "Test datascout pipeline without RNA fastq download"
+    name "Test complete datascout pipeline"
     script "main.nf"
 
-    tag "ci"
     tag "pipeline"
 
-    test("Should run datascout pipeline end-to-end without RNA fastq download") {
+    test("Should run datascout pipeline end-to-end with test data") {
 
         setup {
             // Create mini NCBI database for testing
@@ -27,7 +26,6 @@ nextflow_pipeline {
                 max_orthodb_clusters = 1
                 order_runs_by_smallest = true // download only the smallest run files
                 sourmash = false // sourmash will take too long
-                download_rna_fastq = false // download uses FIRE that is not available in CI
 
                 // Use test output directory
                 outdir = "$outputDir"
@@ -54,6 +52,8 @@ nextflow_pipeline {
 
                 { assert path("$outputDir").list().any { it.fileName.toString().endsWith("_reheaded_assembly.fasta") } },
                 { assert path("$outputDir").list().any { it.fileName.toString().endsWith("_ENA_filtered_rna.csv") } },
+                { assert path("$outputDir").list().any { it.fileName.toString().endsWith("_default_rna_fastq_dir") } },
+                { assert path("$outputDir/GCA_003719455.1_default_rna_fastq_dir").list().size() == 2 },
                 { assert path("$outputDir/test_sample1_tax_ranks.tsv").exists() },
 
                 { assert path("$outputDir/test_sample1_orthodb_dir").exists() },
