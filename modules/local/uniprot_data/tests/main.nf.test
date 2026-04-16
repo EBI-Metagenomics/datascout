@@ -3,6 +3,8 @@ nextflow_process {
     name "Test Process UNIPROT_DATA"
     script "modules/local/uniprot_data/main.nf"
     process "UNIPROT_DATA"
+    tag "module"
+    tag "uniprot_data"
 
     test("Should run without failures") {
 

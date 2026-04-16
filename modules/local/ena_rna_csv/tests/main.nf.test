@@ -3,6 +3,8 @@ nextflow_process {
     name "Test Process ENA_RNA_CSV"
     script "modules/local/ena_rna_csv/main.nf"
     process "ENA_RNA_CSV"
+    tag "module"
+    tag "ena_rna_csv"
 
     test("Should run without failures") {
 

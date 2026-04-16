@@ -3,6 +3,8 @@ nextflow_process {
     name "Test Process NCBI_ORTHODB"
     script "modules/local/ncbi_orthodb/main.nf"
     process "NCBI_ORTHODB"
+    tag "module"
+    tag "ncbi_orthodb"
 
     test("Should run without failures") {
 

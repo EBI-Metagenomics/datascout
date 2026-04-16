@@ -3,6 +3,8 @@ nextflow_process {
     name "Test Process SOURMASH_GATHER"
     script "modules/local/sourmash_gather/main.nf"
     process "SOURMASH_GATHER"
+    tag "module"
+    tag "sourmash_gather"
 
     test("Should run without failures") {
 
