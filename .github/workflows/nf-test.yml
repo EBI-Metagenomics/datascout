@@ -73,7 +73,7 @@ jobs:
         id: run_nf_test
         run: |
           nf-test test \
-            --tag '!download_fastq_files' \
+            --tag 'ci' \
             --profile docker,test \
             --junitxml test-results.xml \
             --verbose

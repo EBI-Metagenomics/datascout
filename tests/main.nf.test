@@ -3,6 +3,9 @@ nextflow_pipeline {
     name "Test complete datascout pipeline"
     script "main.nf"
 
+    tag "ci"
+    tag "pipeline"
+
     test("Should run datascout pipeline end-to-end with test data") {
 
         setup {

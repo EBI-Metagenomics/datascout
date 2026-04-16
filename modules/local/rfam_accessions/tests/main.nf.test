@@ -5,6 +5,7 @@ nextflow_process {
     process "RFAM_ACCESSIONS"
     tag "module"
     tag "rfam_accessions"
+    tag "ci"
 
     test("Should run without failures") {
 

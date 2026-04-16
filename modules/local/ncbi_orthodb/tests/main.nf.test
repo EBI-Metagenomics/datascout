@@ -5,6 +5,7 @@ nextflow_process {
     process "NCBI_ORTHODB"
     tag "module"
     tag "ncbi_orthodb"
+    tag "ci"
 
     test("Should run without failures") {
 
