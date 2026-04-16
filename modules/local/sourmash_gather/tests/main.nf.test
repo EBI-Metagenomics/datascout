@@ -5,6 +5,7 @@ nextflow_process {
     process "SOURMASH_GATHER"
     tag "module"
     tag "sourmash_gather"
+    tag "ci"
 
     test("Should run without failures") {
 

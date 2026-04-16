@@ -5,6 +5,7 @@ nextflow_process {
     process "GENOME_ASSEMBLY"
     tag "module"
     tag "genome_assembly"
+    tag "ci"
 
     test("Should run without failures") {
 

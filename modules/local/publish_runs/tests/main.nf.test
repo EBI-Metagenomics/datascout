@@ -5,6 +5,7 @@ nextflow_process {
     process "PUBLISH_RUNS"
     tag "module"
     tag "publish_runs"
+    tag "ci"
 
     test("Should run without failures") {
 

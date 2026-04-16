@@ -5,6 +5,7 @@ nextflow_process {
     process "UNIPROT_DATA"
     tag "module"
     tag "uniprot_data"
+    tag "ci"
 
     test("Should run without failures") {
 

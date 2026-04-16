@@ -5,6 +5,7 @@ nextflow_process {
     process "ENA_RNA_CSV"
     tag "module"
     tag "ena_rna_csv"
+    tag "ci"
 
     test("Should run without failures") {
 

@@ -5,6 +5,7 @@ nextflow_process {
     process "TAX_LINEAGE"
     tag "module"
     tag "parse_tax_lineage"
+    tag "ci"
 
     test("Should run without failures") {
 
