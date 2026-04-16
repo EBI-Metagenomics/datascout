@@ -36,13 +36,13 @@ def parse_taxa(taxa_file):
     return tax_dict
 
 def get_orthodb_data(taxa_dict, max_lineage=None):
-    """query orthoDB per taxonmic rank. Stop when non-empty result 
+    """query orthoDB per taxonmic rank. Stop when non-empty result
     is returned. Use rank if provided by user"""
     logging.info("Getting OrthoDB data")
     clusters = []
 
     for taxid, rank in taxa_dict.items():
-        data_found = False 
+        data_found = False
         query_terms = SEARCH_URL_ARGS.copy()
         query_terms.update(
             {
@@ -63,7 +63,7 @@ def get_orthodb_data(taxa_dict, max_lineage=None):
                     logging.error(f"No OrthoDB groups found up to taxonomic rank {max_lineage}, as provided by user.")
                     return None
                 #   Continue to the next taxid
-                break  
+                break
             else:
                 #   add clusters to existing dict
                 clusters.extend(data["data"])
@@ -75,7 +75,7 @@ def get_orthodb_data(taxa_dict, max_lineage=None):
                 if max_lineage and rank == max_lineage:
                     logging.info(f"Found {len(clusters)} clusters in OrthoDB")
                     return clusters
-                
+
                 logging.info(f"Found {len(clusters)} clusters in OrthoDB")
                 return clusters
     #   in case nothing is found at any rank
@@ -122,7 +122,7 @@ def query_orthodb(query_terms, search=False, download=False):
         raise
 
 def create_combined_fa(taxid, orthodb_ncbi_subfolder):
-    """Combine orthodb clusters into single file per taxid. Retain unique orthoDB seqIDs. Keep only ID and 
+    """Combine orthodb clusters into single file per taxid. Retain unique orthoDB seqIDs. Keep only ID and
     remove description in fasta headers"""
 
     ortho_ids = set()
@@ -147,7 +147,7 @@ def main():
         "-t", "--tax_file", type=str, help="File with taxonomic lineage information"
     )
     parser.add_argument(
-        "-l", "--lineage_max", type=str, help="""Least specfic lineage rank to fetch data from. 
+        "-l", "--lineage_max", type=str, help="""Least specfic lineage rank to fetch data from.
         The default behaviour is to traverse the taxonomic tree until othologous groups are found""", required=False
     )
     parser.add_argument(
@@ -162,8 +162,9 @@ def main():
     args = parser.parse_args()
 
     if args.version:
-        version = requests.get(VERSION_URL)
-        print(f"\tOrthoDB:{version.text.strip('"')}")
+        version_response = requests.get(VERSION_URL)
+        version = version_response.text.strip('"')
+        print(f"\tOrthoDB:{version}")
         return
 
     logging.basicConfig(level=logging.INFO)
@@ -197,12 +198,12 @@ def main():
             parallelize_jobs(groups)
 
             time.sleep(WAIT)
-        
+
         taxa_folders = glob.glob("*_sequences")
         for folder in taxa_folders:
             taxid = str(folder).split('_')[0]
             create_combined_fa(taxid, folder)
             shutil.move(folder, os.path.join(args.output_dir, folder))
-    
+
 if __name__ == "__main__":
     main()
