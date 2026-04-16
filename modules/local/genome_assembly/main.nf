@@ -5,7 +5,7 @@ process GENOME_ASSEMBLY {
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/d2/d2cc550ff67f8541d44dc2db1b5d2d2e1cfccfe8536222b49788deefde7460f0/data' :
         'community.wave.seqera.io/library/python_pip_biopython_requests:725bda83fb97ec48' }"
-        
+
     label "process_medium"
 
     tag "${meta}"
@@ -31,8 +31,8 @@ process GENOME_ASSEMBLY {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-      Python: \$(python --version 2>&1 | sed 's/Python //g')    
+        Python: \$(python --version 2>&1 | sed 's/Python //g')
     """
 }
 
-// Download genome fasta file 
+// Download genome fasta file

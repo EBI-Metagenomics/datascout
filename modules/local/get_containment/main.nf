@@ -11,11 +11,11 @@ process GET_CONTAINMENT {
     tag "${meta}"
 
     input:
-      tuple val(meta), path(sourmash_file)
+    tuple val(meta), path(sourmash_file)
 
     output:
-      tuple val(meta), path("*runs.txt"), emit: keep_runs
-      path("versions.yml"), emit: versions
+    tuple val(meta), path("*runs.txt"), emit: keep_runs
+    path("versions.yml"), emit: versions
 
 
     script:
@@ -29,6 +29,6 @@ process GET_CONTAINMENT {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-      Python: \$(python --version 2>&1 | sed 's/Python //g')    
+        Python: \$(python --version 2>&1 | sed 's/Python //g')
     """
 }

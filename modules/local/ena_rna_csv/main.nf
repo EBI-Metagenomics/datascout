@@ -11,8 +11,8 @@ process ENA_RNA_CSV {
     tag "${meta}"
 
     input:
-      tuple val(meta), path(tax_ranks)
-      val(order_by_smallest)
+    tuple val(meta), path(tax_ranks)
+    val(order_by_smallest)
 
     output:
     tuple val(meta), path("${meta.genome_id}_ENA_filtered_rna.csv"), emit: rna_csv
@@ -26,7 +26,7 @@ process ENA_RNA_CSV {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-      Python: \$(python --version 2>&1 | sed 's/Python //g')
+        Python: \$(python --version 2>&1 | sed 's/Python //g')
     """
 }
 
