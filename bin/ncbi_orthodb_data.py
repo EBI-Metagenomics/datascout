@@ -80,6 +80,20 @@ def get_orthodb_data(taxa_dict, max_lineage=None):
                 data_found = True
                 logging.info(f"Found {num_clusters} clusters for taxid {taxid}")
 
+                #   OrthoDB reports the protein count of each cluster ("gene_count")
+                #   in "bigdata", so we can log the expected download size upfront
+                bigdata = data.get("bigdata", [])
+                if bigdata:
+                    expected_proteins = sum(
+                        int(entry["gene_count"])
+                        for entry in bigdata
+                        if str(entry.get("gene_count", "")).isdigit()
+                    )
+                    logging.info(
+                        f"Taxid {taxid}: ~{expected_proteins} protein sequences expected "
+                        f"across {len(bigdata)} clusters, before deduplication"
+                    )
+
                 # If rank provided by user was not reached then keep going
                 if max_lineage and rank == max_lineage:
                     logging.info(f"Found {len(clusters)} clusters in OrthoDB")
