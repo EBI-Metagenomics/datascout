@@ -6,6 +6,7 @@ import argparse
 import logging
 import multiprocessing
 import shutil
+import sys
 import time
 import glob
 from Bio import SeqIO
@@ -23,6 +24,12 @@ SEARCH_URL_ARGS = {
 MAX_NB_QUERIES_PER_BLOCK = 50
 NUM_JOBS = 50 # no of simultaneous runs
 WAIT = 10
+MAX_RETRIES = 3
+REQUEST_TIMEOUT = 60
+
+
+class OrthoDBRequestError(Exception):
+    """Raised when an OrthoDB request fails after all retries are exhausted."""
 
 
 def parse_taxa(taxa_file):
@@ -90,7 +97,11 @@ def get_orthodb_data(taxa_dict, max_lineage=None):
         return None
 
 def get_sequences(cluster):
-    """get sequence fasta per orthoDB cluster"""
+    """
+    Get sequence fasta per orthoDB cluster.
+    Raises OrthoDBRequestError if the download does not succeed
+    after MAX_RETRIES retries.
+    """
     #   example cluster ID 10626at5690
     taxid = cluster.split('at')[1]
     params = {
@@ -100,10 +111,19 @@ def get_sequences(cluster):
     fasta_file_path = os.path.join(orthodb_dir, f"{cluster}.faa")
     if not os.path.exists(orthodb_dir):
         os.makedirs(orthodb_dir, exist_ok=True)
-    if not os.path.exists(fasta_file_path):
-        response = query_orthodb(params, download=True)
-        with open(fasta_file_path, 'wb') as fasta:
-            fasta.write(response.content)
+    #   a leftover empty/truncated file from a previous failed attempt should
+    #   not be mistaken for a completed download
+    if os.path.exists(fasta_file_path) and os.path.getsize(fasta_file_path) > 0:
+        return
+    response = query_orthodb(params, download=True)
+    if not response.content.lstrip().startswith(b">"):
+        body_preview = response.content[:200]
+        raise OrthoDBRequestError(
+            f"OrthoDB returned a non-FASTA response for cluster {cluster} "
+            f"(body: {body_preview!r})"
+        )
+    with open(fasta_file_path, 'wb') as fasta:
+        fasta.write(response.content)
 
 def parallelize_jobs(clusters):
     with multiprocessing.Pool(NUM_JOBS) as pool:
@@ -114,12 +134,39 @@ def query_orthodb(query_terms, search=False, download=False):
         url = SEARCH_URL
     if download:
         url = PARSE_URL
-    try:
-        response = requests.get(url=url, params=query_terms)
-        return response
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        raise
+
+    last_error = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            response = requests.get(url=url, params=query_terms, timeout=REQUEST_TIMEOUT)
+            if response.ok and response.content:
+                if search:
+                    #   validate the body is actually JSON before handing it back,
+                    #   since OrthoDB can return a 200 with an HTML/empty error body
+                    response.json()
+                return response
+            body_preview = response.text[:200].replace("\n", " ")
+            last_error = f"HTTP {response.status_code}, body: {body_preview!r}"
+        except requests.exceptions.JSONDecodeError:
+            body_preview = response.text[:200].replace("\n", " ")
+            last_error = (
+                f"OrthoDB returned HTTP {response.status_code} but the body was not "
+                f"valid JSON (body: {body_preview!r})"
+            )
+        except requests.exceptions.RequestException as e:
+            last_error = f"{type(e).__name__}: {e}"
+
+        if attempt < MAX_RETRIES:
+            logging.warning(
+                f"OrthoDB request to {url} failed ({last_error}), retrying "
+                f"({attempt}/{MAX_RETRIES}) in {WAIT}s: {query_terms}"
+            )
+            time.sleep(WAIT)
+
+    raise OrthoDBRequestError(
+        f"OrthoDB request to {url} with params {query_terms} failed after "
+        f"{MAX_RETRIES} attempts. Last error: {last_error}"
+    ) from None
 
 def create_combined_fa(taxid, orthodb_ncbi_subfolder):
     """Combine orthodb clusters into single file per taxid. Retain unique orthoDB seqIDs. Keep only ID and
@@ -185,32 +232,36 @@ def main():
     else:
         max_lineage = args.lineage_max
 
-    taxa_dict = parse_taxa(args.tax_file)
-    clusters = get_orthodb_data(taxa_dict, max_lineage)
+    try:
+        taxa_dict = parse_taxa(args.tax_file)
+        clusters = get_orthodb_data(taxa_dict, max_lineage)
 
-    n_proteins = 0
-    taxid = ""
+        n_proteins = 0
+        taxid = ""
 
-    if clusters:
-        if args.max_clusters:
-            logging.info(f"Limit to first {args.max_clusters} clusters")
-            clusters = clusters[:args.max_clusters]
-        num_clusters = len(clusters)
-        start = 0
-        end = MAX_NB_QUERIES_PER_BLOCK
+        if clusters:
+            if args.max_clusters:
+                logging.info(f"Limit to first {args.max_clusters} clusters")
+                clusters = clusters[:args.max_clusters]
+            num_clusters = len(clusters)
+            start = 0
+            end = MAX_NB_QUERIES_PER_BLOCK
 
-        while start < num_clusters:
-            groups = clusters[start:end]
-            start = end
-            end = min(end + MAX_NB_QUERIES_PER_BLOCK, num_clusters)
-            logging.info(f"Fetching sequences for cluster {start} to {end}")
-            parallelize_jobs(groups)
+            while start < num_clusters:
+                groups = clusters[start:end]
+                start = end
+                end = min(end + MAX_NB_QUERIES_PER_BLOCK, num_clusters)
+                logging.info(f"Fetching sequences for cluster {start} to {end}")
+                parallelize_jobs(groups)
 
-            time.sleep(WAIT)
+                time.sleep(WAIT)
 
-        for folder in glob.glob("*_sequences"):
-            taxid = str(folder).split('_')[0]
-            n_proteins += create_combined_fa(taxid, folder)
+            for folder in glob.glob("*_sequences"):
+                taxid = str(folder).split('_')[0]
+                n_proteins += create_combined_fa(taxid, folder)
+    except OrthoDBRequestError as e:
+        logging.error(f"Aborting: could not fetch data from OrthoDB. {e}")
+        sys.exit(1)
 
     #   trace the sample and produce no output directory rather than publish too few proteins
     if n_proteins < args.min_proteins:
