@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import random
 import requests
 import argparse
 import logging
@@ -22,7 +23,7 @@ SEARCH_URL_ARGS = {
     "take": "5000"
 }
 MAX_NB_QUERIES_PER_BLOCK = 50
-NUM_JOBS = 50 # no of simultaneous runs
+NUM_JOBS = 10 # no of simultaneous runs. Kept modest: OrthoDB 403s ("too high request rate") well below 50
 WAIT = 10
 MAX_RETRIES = 3
 REQUEST_TIMEOUT = 60
@@ -157,11 +158,15 @@ def query_orthodb(query_terms, search=False, download=False):
             last_error = f"{type(e).__name__}: {e}"
 
         if attempt < MAX_RETRIES:
+            #   exponential backoff with jitter: with NUM_JOBS workers retrying
+            #   in parallel, a fixed sleep just re-synchronizes them into the
+            #   next rate-limit rejection, so decorrelate with randomness
+            backoff = WAIT * (2 ** (attempt - 1)) + random.uniform(0, WAIT)
             logging.warning(
                 f"OrthoDB request to {url} failed ({last_error}), retrying "
-                f"({attempt}/{MAX_RETRIES}) in {WAIT}s: {query_terms}"
+                f"({attempt}/{MAX_RETRIES}) in {backoff:.1f}s: {query_terms}"
             )
-            time.sleep(WAIT)
+            time.sleep(backoff)
 
     raise OrthoDBRequestError(
         f"OrthoDB request to {url} with params {query_terms} failed after "
