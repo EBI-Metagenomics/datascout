@@ -23,7 +23,7 @@ SEARCH_URL_ARGS = {
     "take": "5000"
 }
 MAX_NB_QUERIES_PER_BLOCK = 50
-NUM_JOBS = 10 # no of simultaneous runs. Kept modest: OrthoDB 403s ("too high request rate") well below 50
+NUM_JOBS = 2 # no of simultaneous runs. Kept modest: OrthoDB 403s ("too high request rate") well below 50
 WAIT = 10
 MAX_RETRIES = 3
 REQUEST_TIMEOUT = 60
@@ -46,10 +46,11 @@ def parse_taxa(taxa_file):
 def get_orthodb_data(taxa_dict, max_lineage=None):
     """query orthoDB per taxonmic rank. Stop when non-empty result
     is returned. Use rank if provided by user"""
-    logging.info("Getting OrthoDB data")
+    num_ranks = len(taxa_dict)
+    logging.info(f"Getting OrthoDB data: {num_ranks} taxonomic rank(s) available in lineage, most specific first")
     clusters = []
 
-    for taxid, rank in taxa_dict.items():
+    for rank_num, (taxid, rank) in enumerate(taxa_dict.items(), start=1):
         data_found = False
         query_terms = SEARCH_URL_ARGS.copy()
         query_terms.update(
@@ -60,7 +61,7 @@ def get_orthodb_data(taxa_dict, max_lineage=None):
         )
 
         while not data_found:
-            logging.info(f"Searching OrthoDB entries for taxid {taxid}")
+            logging.info(f"[{rank_num}/{num_ranks}] Searching OrthoDB entries for taxid {taxid} (rank: {rank})")
             response = query_orthodb(query_terms, search=True)
             data = response.json()
 
@@ -115,7 +116,9 @@ def get_sequences(cluster):
     #   a leftover empty/truncated file from a previous failed attempt should
     #   not be mistaken for a completed download
     if os.path.exists(fasta_file_path) and os.path.getsize(fasta_file_path) > 0:
+        logging.info(f"Cluster {cluster}: already downloaded, skipping")
         return
+    logging.info(f"Cluster {cluster}: starting download")
     response = query_orthodb(params, download=True)
     if not response.content.lstrip().startswith(b">"):
         body_preview = response.content[:200]
@@ -123,8 +126,10 @@ def get_sequences(cluster):
             f"OrthoDB returned a non-FASTA response for cluster {cluster} "
             f"(body: {body_preview!r})"
         )
+    n_seqs = response.content.count(b">")
     with open(fasta_file_path, 'wb') as fasta:
         fasta.write(response.content)
+    logging.info(f"Cluster {cluster}: downloaded {n_seqs} protein sequence(s)")
 
 def parallelize_jobs(clusters):
     with multiprocessing.Pool(NUM_JOBS) as pool:
@@ -249,21 +254,30 @@ def main():
                 logging.info(f"Limit to first {args.max_clusters} clusters")
                 clusters = clusters[:args.max_clusters]
             num_clusters = len(clusters)
+            logging.info(f"Downloading sequences for {num_clusters} OrthoDB clusters")
             start = 0
-            end = MAX_NB_QUERIES_PER_BLOCK
+            num_blocks = -(-num_clusters // MAX_NB_QUERIES_PER_BLOCK)  # ceil division
+            block_num = 0
 
             while start < num_clusters:
+                end = min(start + MAX_NB_QUERIES_PER_BLOCK, num_clusters)
+                block_num += 1
                 groups = clusters[start:end]
-                start = end
-                end = min(end + MAX_NB_QUERIES_PER_BLOCK, num_clusters)
-                logging.info(f"Fetching sequences for cluster {start} to {end}")
+                logging.info(
+                    f"Batch {block_num}/{num_blocks}: fetching clusters {start + 1}-{end} "
+                    f"of {num_clusters} (using {NUM_JOBS} parallel workers)"
+                )
                 parallelize_jobs(groups)
+                logging.info(f"Batch {block_num}/{num_blocks} complete")
+                start = end
 
                 time.sleep(WAIT)
 
             for folder in glob.glob("*_sequences"):
                 taxid = str(folder).split('_')[0]
-                n_proteins += create_combined_fa(taxid, folder)
+                n_proteins_for_taxid = create_combined_fa(taxid, folder)
+                logging.info(f"Taxid {taxid}: combined {n_proteins_for_taxid} unique protein sequence(s)")
+                n_proteins += n_proteins_for_taxid
     except OrthoDBRequestError as e:
         logging.error(f"Aborting: could not fetch data from OrthoDB. {e}")
         sys.exit(1)
