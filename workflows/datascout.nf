@@ -18,6 +18,7 @@ include { samplesheetToList } from 'plugin/nf-schema'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 include { TAX_LINEAGE                } from '../modules/local/parse_tax_lineage/main.nf'
+include { ORTHODB_GETDB              } from '../modules/local/orthodb_getdb/main.nf'
 include { CHECK_ORTHODB_RELEASE      } from '../modules/local/check_orthodb_release/main.nf'
 include { RESOLVE_ORTHODB_TAXON      } from '../modules/local/resolve_orthodb_taxon/main.nf'
 include { BUILD_ORTHODB_FASTA        } from '../modules/local/build_orthodb_fasta/main.nf'
@@ -70,9 +71,18 @@ workflow DATASCOUT {
 
         // query databases for supporting proteins and rnas
 
+        // build the OrthoDB database unless the user already has one
+        if ( params.orthodb_db ) {
+            orthodb_db = Channel.value(params.orthodb_db)
+        } else {
+            ORTHODB_GETDB(params.orthodb_version, params.orthodb_og2genes, params.orthodb_og_aa_fasta)
+            ch_versions = ch_versions.mix(ORTHODB_GETDB.out.versions)
+            orthodb_db = ORTHODB_GETDB.out.orthodb_db.map { db -> db.toString() }
+        }
+
         // the API lists the clusters and the local database holds their sequences, so refuse
         // to start unless both are the same OrthoDB release
-        CHECK_ORTHODB_RELEASE(params.orthodb_db)
+        CHECK_ORTHODB_RELEASE(orthodb_db)
         ch_versions = ch_versions.mix(CHECK_ORTHODB_RELEASE.out.versions)
 
         // resolve which OrthoDB taxon each genome maps to, and list that taxon's clusters

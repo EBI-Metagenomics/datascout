@@ -19,7 +19,7 @@ def parse_clusters(clusters_file):
 
 
 def dump_release(orthodb_db):
-    """OrthoDB release recorded by accessory/orthodb.py when it built the database"""
+    """OrthoDB release recorded by orthodb_getdb.py when it built the database"""
     with duckdb.connect(orthodb_db, read_only=True) as con:
         return con.execute("SELECT release FROM meta").fetchone()[0]
 
@@ -58,14 +58,14 @@ def check_release(orthodb_db, version_url=VERSION_URL):
     api_release = response.text.strip().strip('"')
     if db_release != api_release:
         raise SystemExit(f"OrthoDB release mismatch: the API serves {api_release}, the database "
-                         f"was built from {db_release}. Rebuild it with accessory/orthodb.py, or "
+                         f"was built from {db_release}. Rebuild it with ORTHODB_GETDB, or "
                          f"point the pipeline at a database built from {api_release}.")
     logging.info(f"OrthoDB {api_release} matches the database")
 
 
 def write_combined_fa(clusters, orthodb_db, fasta_file_path, threads=None, memory=None):
     """Write the proteins of the given clusters, joining OG membership and sequences in the
-    database built by accessory/orthodb.py. Return the number of proteins written"""
+    database built by ORTHODB_GETDB. Return the number of proteins written"""
     n_proteins = 0
     with connect(orthodb_db, threads, memory) as con:
         query = con.execute(CLUSTER_PROTEINS, [clusters])
@@ -93,7 +93,7 @@ def main():
     )
     parser.add_argument(
         "--orthodb_db", type=str, required=True, help="""Path to the OrthoDB database built by
-        accessory/orthodb.py, the source of the protein sequences"""
+        ORTHODB_GETDB, the source of the protein sequences"""
     )
     parser.add_argument(
         "--threads", type=int, default=None, help="Cores the task was allocated"

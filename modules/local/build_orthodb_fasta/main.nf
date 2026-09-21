@@ -1,7 +1,7 @@
 process BUILD_ORTHODB_FASTA {
     // Runs once per unique resolved OrthoDB taxon (see workflows/datascout.nf),
     // not once per genome. Sequences come from the local OrthoDB database built
-    // by accessory/orthodb.py, never from the OrthoDB API.
+    // by ORTHODB_GETDB, never from the OrthoDB API.
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?

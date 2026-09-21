@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
-"""Build the OrthoDB duckdb database consumed by the pipeline.
+"""Build the OrthoDB duckdb database the pipeline reads protein sequences from.
 
-This script is not part of the workflow. It is run once per OrthoDB release to turn the
-data dump into a database that NCBI_ORTHODB can query, instead of scanning the dump files
-on every sample. Only two files of the dump are needed, OG2genes and og_aa_fasta, and they
-are downloaded when not provided.
+Turns the OrthoDB data dump into a database BUILD_ORTHODB_FASTA can query, instead of
+downloading one cluster at a time from the OrthoDB API. Only two files of the dump are
+needed, OG2genes and og_aa_fasta, and they are downloaded when not provided.
 
-Dependencies are pinned in accessory/orthodb.requirements.txt.
+Run once per OrthoDB release. The pipeline runs it for you when --orthodb_db is not given.
 """
 
 import argparse
