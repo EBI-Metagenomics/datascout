@@ -21,23 +21,30 @@ def dump_release(orthodb_db):
 
 
 CLUSTER_PROTEINS = """
-    SELECT DISTINCT proteins.gene_id, proteins.seq
+    SELECT proteins.gene_id, proteins.seq
     FROM og2genes JOIN proteins USING (gene_id)
     WHERE og2genes.og_id IN (SELECT * FROM UNNEST(?))
 """
 
 
-def count_proteins(clusters, orthodb_db):
+def connect(orthodb_db, threads=None):
+    """Open the database using only the cores the task was given. Duckdb picks up the memory
+    limit from the cgroup on its own, but not the core count"""
+    config = {"threads": threads} if threads else {}
+    return duckdb.connect(orthodb_db, read_only=True, config=config)
+
+
+def count_proteins(clusters, orthodb_db, threads=None):
     """how many proteins the given clusters hold, without materialising any of them"""
-    with duckdb.connect(orthodb_db, read_only=True) as con:
+    with connect(orthodb_db, threads) as con:
         return con.execute(f"SELECT count(*) FROM ({CLUSTER_PROTEINS})", [clusters]).fetchone()[0]
 
 
-def write_combined_fa(clusters, orthodb_db, fasta_file_path):
+def write_combined_fa(clusters, orthodb_db, fasta_file_path, threads=None):
     """Write the proteins of the given clusters, joining OG membership and sequences in the
     database built by accessory/orthodb.py. Return the number of proteins written"""
     n_proteins = 0
-    with duckdb.connect(orthodb_db, read_only=True) as con:
+    with connect(orthodb_db, threads) as con:
         query = con.execute(CLUSTER_PROTEINS, [clusters])
         with open(fasta_file_path, 'w') as outfile:
             #   fetch in batches, a taxon can hold well over a million sequences
@@ -66,6 +73,9 @@ def main():
         accessory/orthodb.py, the source of the protein sequences"""
     )
     parser.add_argument(
+        "--threads", type=int, default=None, help="Cores the task was allocated"
+    )
+    parser.add_argument(
         "--min_proteins", type=int, default=0, help="""Minimum number of proteins required to keep the
         taxon. Below it no fasta is produced and the taxon is traced in low_proteins.csv, which drops
         every genome that resolved to it"""
@@ -89,7 +99,7 @@ def main():
 
     #   counting first keeps a dropped taxon from writing a fasta only to have it thrown away
     if args.min_proteins:
-        n_proteins = count_proteins(clusters, args.orthodb_db)
+        n_proteins = count_proteins(clusters, args.orthodb_db, args.threads)
         if n_proteins < args.min_proteins:
             logging.warning(f"Dropping taxid {args.taxid}: {n_proteins} proteins, "
                             f"minimum is {args.min_proteins}")
@@ -97,7 +107,7 @@ def main():
                 trace.write(f"{args.taxid},{n_proteins}\n")
             return
 
-    n_proteins = write_combined_fa(clusters, args.orthodb_db, args.output)
+    n_proteins = write_combined_fa(clusters, args.orthodb_db, args.output, args.threads)
     logging.info(f"Wrote {n_proteins} proteins to {args.output}")
 
 
