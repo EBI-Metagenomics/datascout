@@ -21,6 +21,7 @@ nextflow_pipeline {
                 // Use the mini test databases created by setup
                 taxdump = "${projectDir}/tests/reference_databases/ncbi/mini_taxdump.tar.gz"
                 sqlite = "${projectDir}/tests/reference_databases/ncbi/mini_trypanosoma.sqlite"
+                orthodb_db = "${projectDir}/tests/reference_databases/mock_orthodb.duckdb"
 
                 // Set small for fast test
                 max_runs = 1

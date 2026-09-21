@@ -20,6 +20,7 @@ nextflow_pipeline {
                 // Use the mini test databases created by setup
                 taxdump = "${projectDir}/tests/reference_databases/ncbi/mini_taxdump.tar.gz"
                 sqlite = "${projectDir}/tests/reference_databases/ncbi/mini_trypanosoma.sqlite"
+                orthodb_db = "${projectDir}/tests/reference_databases/mock_orthodb.duckdb"
 
                 // Set small for fast test
                 max_runs = 1
@@ -58,6 +59,8 @@ nextflow_pipeline {
 
                 { assert path("$outputDir/test_sample1_orthodb_dir").exists() },
                 { assert path("$outputDir/test_sample1_orthodb_dir").list().size() > 0 },
+                //   the lineage resolves to Trypanosoma, whose first cluster the mock database holds
+                { assert path("$outputDir/test_sample1_orthodb_dir/5690_sequences/combined_orthodb_5690.faa").text.count(">") == 16 },
 
                 { assert path("$outputDir/test_sample1_uniprot_dir").exists() },
                 { assert path("$outputDir/test_sample1_uniprot_dir").list().any { it.fileName.toString().endsWith("_uniprot_proteins.faa") } },
