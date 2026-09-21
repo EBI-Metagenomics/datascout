@@ -1,54 +1,30 @@
 nextflow_process {
 
-    name "Test Process NCBI_ORTHODB"
-    script "modules/local/ncbi_orthodb/main.nf"
-    process "NCBI_ORTHODB"
+    name "Test Process RESOLVE_ORTHODB_TAXON"
+    script "modules/local/resolve_orthodb_taxon/main.nf"
+    process "RESOLVE_ORTHODB_TAXON"
     tag "module"
-    tag "ncbi_orthodb"
+    tag "resolve_orthodb_taxon"
     tag "ci"
 
-    test("Should run without failures") {
+    test("Should resolve a taxon and list its clusters") {
 
         when {
             process {
                 """
                 input[0] = tuple([id:"test_sample1", genome_id:"GCA_003719455.1", ena_tax:"default"], "$projectDir/tests/reference_databases/test_sample1_tax_ranks.tsv", "default")
                 input[1] = 1
-                input[2] = 0
                 """
             }
         }
 
         then {
             assert process.success
-            def names = []
-            file(process.out.orthodb_results.get(0).get(1)).eachFileRecurse { names << it.name }
-            assert names.any { it.endsWith('.faa') }
-            assert snapshot(names.sort()).match()
-        }
-
-    }
-
-    test("Should drop the sample when orthodb_min_proteins is not met") {
-
-        when {
-            process {
-                """
-                input[0] = tuple([id:"test_sample1", genome_id:"GCA_003719455.1", ena_tax:"default"], "$projectDir/tests/reference_databases/test_sample1_tax_ranks.tsv", "default")
-                input[1] = 1
-                input[2] = 100000000
-                """
-            }
-        }
-
-        then {
-            assert process.success
-            // no orthodb_dir is emitted..
-            assert process.out.orthodb_results.size() == 0
-            // ..but the sample is traced with its protein count
-            assert process.out.low_proteins.size() == 1
-            def trace = file(process.out.low_proteins.get(0)).text.trim()
-            assert trace ==~ /test_sample1,\d+,\d+/
+            assert process.out.taxon_clusters.size() == 1
+            def taxon_file = file(process.out.taxon_clusters.get(0).get(1))
+            def clusters_file = file(process.out.taxon_clusters.get(0).get(2))
+            assert taxon_file.text.trim() ==~ /\d+/
+            assert clusters_file.readLines().size() >= 2 // header + at least one cluster
         }
 
     }
