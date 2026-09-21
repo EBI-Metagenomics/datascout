@@ -1,29 +1,21 @@
 #!/usr/bin/env python3
 
 import os
+import duckdb
 import requests
 import argparse
 import logging
-import multiprocessing
 import shutil
-import time
 import glob
-from Bio import SeqIO
 
 #   set all requests static params beforehand
-PARSE_URL = "https://data.orthodb.org/current/fasta?"
 SEARCH_URL = "https://data.orthodb.org/current/search?"
-VERSION_URL = "https://data.orthodb.org/current/orthodb_release_id"
 
 SEARCH_URL_ARGS = {
     "universal": "0.9",
     "singlecopy": "0.9",
     "take": "5000"
 }
-MAX_NB_QUERIES_PER_BLOCK = 50
-NUM_JOBS = 50 # no of simultaneous runs
-WAIT = 10
-
 
 def parse_taxa(taxa_file):
     logging.info("Parsing taxa lineages from file")
@@ -89,31 +81,9 @@ def get_orthodb_data(taxa_dict, max_lineage=None):
             logging.error("No OrthoDB groups found at any taxonomic rank.")
         return None
 
-def get_sequences(cluster):
-    """get sequence fasta per orthoDB cluster"""
-    #   example cluster ID 10626at5690
-    taxid = cluster.split('at')[1]
-    params = {
-        "id": str(cluster),
-    }
-    orthodb_dir = f"{taxid}_sequences"
-    fasta_file_path = os.path.join(orthodb_dir, f"{cluster}.faa")
-    if not os.path.exists(orthodb_dir):
-        os.makedirs(orthodb_dir, exist_ok=True)
-    if not os.path.exists(fasta_file_path):
-        response = query_orthodb(params, download=True)
-        with open(fasta_file_path, 'wb') as fasta:
-            fasta.write(response.content)
-
-def parallelize_jobs(clusters):
-    with multiprocessing.Pool(NUM_JOBS) as pool:
-        pool.map(get_sequences, clusters)
-
-def query_orthodb(query_terms, search=False, download=False):
+def query_orthodb(query_terms, search=False):
     if search:
         url = SEARCH_URL
-    if download:
-        url = PARSE_URL
     try:
         response = requests.get(url=url, params=query_terms)
         return response
@@ -121,25 +91,27 @@ def query_orthodb(query_terms, search=False, download=False):
         print(f"An unexpected error occurred: {e}")
         raise
 
-def create_combined_fa(taxid, orthodb_ncbi_subfolder):
-    """Combine orthodb clusters into single file per taxid. Retain unique orthoDB seqIDs. Keep only ID and
-    remove description in fasta headers. Return the number of proteins written"""
+def dump_release(orthodb_db):
+    """OrthoDB release recorded by accessory/orthodb.py when it built the database"""
+    with duckdb.connect(orthodb_db, read_only=True) as con:
+        return con.execute("SELECT release FROM meta").fetchone()[0]
 
-    ortho_ids = set()
-    final_ortho_fasta = os.path.join(orthodb_ncbi_subfolder, f"combined_orthodb_{taxid}.faa")
-    if os.path.exists(final_ortho_fasta):
-        logging.warning(f"combined fasta file {final_ortho_fasta} exists. Overwriting...")
-        os.remove(final_ortho_fasta)
-    with open(final_ortho_fasta, 'w') as outfile:
-        for fasta_file in glob.glob(os.path.join(orthodb_ncbi_subfolder, "*.faa")):
-            if not "combined" in fasta_file:
-                for entry in SeqIO.parse(fasta_file, "fasta"):
-                    if entry.id not in ortho_ids:
-                        outfile.write(f">{entry.id}\n")
-                        outfile.write(f"{str(entry.seq)}\n")
-                        ortho_ids.add(entry.id)
-                os.remove(fasta_file)
-    return len(ortho_ids)
+def write_combined_fa_from_db(clusters, orthodb_db, fasta_file_path):
+    """Write the proteins of the given clusters, joining OG membership and sequences in the
+    database built by accessory/orthodb.py. Return the number of proteins written"""
+    n_proteins = 0
+    with duckdb.connect(orthodb_db, read_only=True) as con:
+        query = con.execute("""
+            SELECT DISTINCT proteins.gene_id, proteins.seq
+            FROM og2genes JOIN proteins USING (gene_id)
+            WHERE og2genes.og_id IN (SELECT * FROM UNNEST(?))
+        """, [list(clusters)])
+        with open(fasta_file_path, 'w') as outfile:
+            while batch := query.fetchmany(100000):
+                for gene, sequence in batch:
+                    outfile.write(f">{gene}\n{sequence}\n")
+                n_proteins += len(batch)
+    return n_proteins
 
 
 def main():
@@ -165,14 +137,16 @@ def main():
         "--sample_id", type=str, default="", help="Sample identifier used when tracing a dropped sample"
     )
     parser.add_argument(
+        "--orthodb_db", type=str, required=True, help="""Path to the OrthoDB database built by
+        accessory/orthodb.py, the source of the protein sequences"""
+    )
+    parser.add_argument(
         "--version", action="store_true", help="Show orthodb version number and exit"
     )
     args = parser.parse_args()
 
     if args.version:
-        version_response = requests.get(VERSION_URL)
-        version = version_response.text.strip('"')
-        print(f"OrthoDB: {version}")
+        print(f"OrthoDB: {dump_release(args.orthodb_db)}")
         return
 
     logging.basicConfig(level=logging.INFO)
@@ -195,22 +169,13 @@ def main():
         if args.max_clusters:
             logging.info(f"Limit to first {args.max_clusters} clusters")
             clusters = clusters[:args.max_clusters]
-        num_clusters = len(clusters)
-        start = 0
-        end = MAX_NB_QUERIES_PER_BLOCK
-
-        while start < num_clusters:
-            groups = clusters[start:end]
-            start = end
-            end = min(end + MAX_NB_QUERIES_PER_BLOCK, num_clusters)
-            logging.info(f"Fetching sequences for cluster {start} to {end}")
-            parallelize_jobs(groups)
-
-            time.sleep(WAIT)
-
-        for folder in glob.glob("*_sequences"):
-            taxid = str(folder).split('_')[0]
-            n_proteins += create_combined_fa(taxid, folder)
+        taxid = clusters[0].split('at')[1]
+        orthodb_dir = f"{taxid}_sequences"
+        os.makedirs(orthodb_dir, exist_ok=True)
+        n_proteins = write_combined_fa_from_db(
+            clusters, args.orthodb_db,
+            os.path.join(orthodb_dir, f"combined_orthodb_{taxid}.faa")
+        )
 
     #   trace the sample and produce no output directory rather than publish too few proteins
     if n_proteins < args.min_proteins:

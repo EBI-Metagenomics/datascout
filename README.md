@@ -29,6 +29,8 @@ Uses the following filters:
 "universal": "0.9",
 "singlecopy": "0.9"
 
+Cluster lists come from the OrthoDB API, one request per sample. The protein sequences are read from the database built by [`accessory/orthodb.py`](#building-the-orthodb-database), which `--orthodb_db` is required to point at.
+
 An optional `orthodb_min_proteins` parameter can be used to force the pipeline to discard genomes with fewer than `orthodb_min_proteins` proteins. This is useful because downstream pipelines, such as the MGnify Genomes Catalogue Pipeline, cannot process genomes with insufficient gene evidence. This is because BRAKER, for example, runs AUGUSTUS, which crashes when the protein evidence file contains too little information to train the model used for predictions ([details in this issue](https://github.com/Gaius-Augustus/BRAKER/issues/8)).
 
 ## Step 3. UniProt
@@ -94,6 +96,8 @@ DATABASE OPTIONS:
                           Used for taxonomic lineage parsing.
   --sqlite <dir>          Path to NCBI sqlite database. Will be downloaded if not provided.
                           Used for taxonomic lineage parsing.
+  --orthodb_db <file>     REQUIRED. Path to the OrthoDB database built by
+                          accessory/orthodb.py, the source of the protein sequences.
   --rfam_db <file>        Path to the latest available public Rfam database connection config.
                           [default: ${projectDir}/assets/rfam_db.txt]
                           Used for RNA family searches.
@@ -121,6 +125,29 @@ PROCESSING OPTIONS:
                           When enabled, the pipeline will not query Rfam and no
                           rfam_dir output is produced. [default: false]
 ```
+
+# Building the OrthoDB database
+
+`accessory/orthodb.py` builds a DuckDB SQL database out of two files of the
+[OrthoDB data dump](https://data.orthodb.org/v12/download/odb_data_dump/), `odb*_OG2genes.tab.gz`,
+which maps orthologous groups to gene ids, and `odb*_og_aa_fasta.gz`, which holds the protein
+sequences.
+
+
+```bash
+#   download both files and build the database
+python3 accessory/orthodb.py --output orthodb.duckdb --download_dir /path/to/dump
+
+#   or build from files already on disk
+python3 accessory/orthodb.py --output orthodb.duckdb \
+    --og2genes /path/to/odb12v2_OG2genes.tab.gz \
+    --og_aa_fasta /path/to/odb12v2_og_aa_fasta.gz
+```
+
+The database holds three tables: `og2genes` maps orthologous groups to gene ids, `proteins` holds
+one sequence per gene id, and `meta` records the OrthoDB release, which the pipeline reports in
+`versions.yml`. Pass the result with `--orthodb_db`, or use `-profile codon`, where it is already
+set to the copy under `ref-dbs`.
 
 # Samplesheet
 

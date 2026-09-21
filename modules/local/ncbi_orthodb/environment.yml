@@ -5,5 +5,5 @@ dependencies:
 - conda-forge::python=3.13.1
 - pip
 - pip:
-  - biopython==1.85
+  - duckdb==1.5.5
   - requests==2.32.3

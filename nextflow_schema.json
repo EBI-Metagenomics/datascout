@@ -40,6 +40,7 @@
       "type": "object",
       "fa_icon": "fas fa-database",
       "description": "Options for database paths and configurations",
+      "required": ["orthodb_db"],
       "properties": {
         "taxdump": {
           "type": "string",
@@ -54,6 +55,13 @@
           "description": "Path to NCBI sqlite database",
           "help_text": "Path to NCBI sqlite database used for taxonomic lineage parsing",
           "fa_icon": "fas fa-folder"
+        },
+        "orthodb_db": {
+          "type": "string",
+          "format": "file-path",
+          "description": "Path to the OrthoDB database built by accessory/orthodb.py",
+          "help_text": "Path to the OrthoDB database file to look up OrthoDB protein sequences. Build it once per OrthoDB release with accessory/orthodb.py.",
+          "fa_icon": "fas fa-database"
         },
         "rfam_db": {
           "type": "string",
