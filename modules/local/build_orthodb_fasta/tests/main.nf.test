@@ -1,0 +1,29 @@
+nextflow_process {
+
+    name "Test Process BUILD_ORTHODB_FASTA"
+    script "modules/local/build_orthodb_fasta/main.nf"
+    process "BUILD_ORTHODB_FASTA"
+    tag "module"
+    tag "build_orthodb_fasta"
+
+    test("Should write a placeholder combined FASTA for the given taxon") {
+
+        when {
+            process {
+                """
+                input[0] = tuple("5204", file("$projectDir/tests/reference_databases/mock_orthodb_clusters.tsv"))
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.fasta.get(0).get(0) == "5204"
+            def fasta = file(process.out.fasta.get(0).get(1))
+            assert fasta.name == "combined_orthodb_5204.faa"
+            assert fasta.text.startsWith(">")
+        }
+
+    }
+
+}
