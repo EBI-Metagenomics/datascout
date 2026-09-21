@@ -31,7 +31,7 @@ Uses the following filters:
 
 Cluster lists come from the OrthoDB API, one request per sample. The protein sequences are read from the database built by [`accessory/orthodb.py`](#building-the-orthodb-database), which `--orthodb_db` is required to point at.
 
-An optional `orthodb_min_proteins` parameter can be used to force the pipeline to discard genomes with fewer than `orthodb_min_proteins` proteins. This is useful because downstream pipelines, such as the MGnify Genomes Catalogue Pipeline, cannot process genomes with insufficient gene evidence. This is because BRAKER, for example, runs AUGUSTUS, which crashes when the protein evidence file contains too little information to train the model used for predictions ([details in this issue](https://github.com/Gaius-Augustus/BRAKER/issues/8)).
+An optional `orthodb_min_proteins` parameter can be used to force the pipeline to discard genomes whose resolved OrthoDB taxon holds fewer than `orthodb_min_proteins` proteins. The count is per taxon, so a taxon below the threshold drops every genome that resolved to it. This is useful because downstream pipelines, such as the MGnify Genomes Catalogue Pipeline, cannot process genomes with insufficient gene evidence. This is because BRAKER, for example, runs AUGUSTUS, which crashes when the protein evidence file contains too little information to train the model used for predictions ([details in this issue](https://github.com/Gaius-Augustus/BRAKER/issues/8)).
 
 ## Step 3. UniProt
 
@@ -118,7 +118,7 @@ PROCESSING OPTIONS:
   --swissprot             Use SwissProt database only.
                           Restricts UniProt searches to manually curated entries. [default: false]
   --orthodb_min_proteins <int> Minimum number of OrthoDB proteins required to keep a
-                          genome, counted in combined_orthodb_<taxid>.faa. Samples below
+                          genome, counted per resolved taxon. Genomes whose taxon is below
                           the threshold produce no orthodb_dir and are listed in
                           low_protein_genomes.csv. [default: 0 (filter disabled)]
   --skip_rfam             Skip the Rfam accessions retrieval step.

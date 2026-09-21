@@ -6,4 +6,3 @@ dependencies:
 - pip
 - pip:
   - duckdb==1.5.5
-  - requests==2.32.3
