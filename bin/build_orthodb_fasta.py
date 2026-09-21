@@ -3,6 +3,10 @@
 import argparse
 import logging
 import duckdb
+import requests
+
+
+VERSION_URL = "https://data.orthodb.org/current/orthodb_release_id"
 
 
 def parse_clusters(clusters_file):
@@ -42,6 +46,21 @@ def count_proteins(clusters, orthodb_db, threads=None, memory=None):
     """how many proteins the given clusters hold, without materialising any of them"""
     with connect(orthodb_db, threads, memory) as con:
         return con.execute(f"SELECT count(*) FROM ({CLUSTER_PROTEINS})", [clusters]).fetchone()[0]
+
+
+def check_release(orthodb_db, version_url=VERSION_URL):
+    """Cluster ids only mean the same thing in the release they were listed from: OrthoDB
+    re-uses OG ids between releases, so a newer API silently points at different groups"""
+    with connect(orthodb_db) as con:
+        db_release = con.execute("SELECT api_release FROM meta").fetchone()[0]
+    response = requests.get(version_url, timeout=60)
+    response.raise_for_status()
+    api_release = response.text.strip().strip('"')
+    if db_release != api_release:
+        raise SystemExit(f"OrthoDB release mismatch: the API serves {api_release}, the database "
+                         f"was built from {db_release}. Rebuild it with accessory/orthodb.py, or "
+                         f"point the pipeline at a database built from {api_release}.")
+    logging.info(f"OrthoDB {api_release} matches the database")
 
 
 def write_combined_fa(clusters, orthodb_db, fasta_file_path, threads=None, memory=None):
@@ -89,6 +108,10 @@ def main():
         every genome that resolved to it"""
     )
     parser.add_argument(
+        "--check_release", action="store_true", help="""Check the database was built from the
+        OrthoDB release the API currently serves, and exit"""
+    )
+    parser.add_argument(
         "--version", action="store_true", help="Show orthodb version number and exit"
     )
     args = parser.parse_args()
@@ -98,6 +121,10 @@ def main():
         return
 
     logging.basicConfig(level=logging.INFO)
+
+    if args.check_release:
+        check_release(args.orthodb_db)
+        return
 
     if not args.taxid or not args.clusters_file or not args.output:
         parser.error("--taxid, --clusters_file and --output are required unless --version is specified")

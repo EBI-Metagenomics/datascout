@@ -22,6 +22,7 @@ import duckdb
 import requests
 
 DUMP_URL = "https://data.orthodb.org/{odb_version}/download/odb_data_dump/"
+RELEASE_URL = "https://data.orthodb.org/{odb_version}/orthodb_release_id"
 DUMP_FILES = {"og2genes": r"\S+_OG2genes\.tab\.gz", "og_aa_fasta": r"\S+_og_aa_fasta\.gz"}
 
 
@@ -57,6 +58,14 @@ def download(url, download_dir):
 def release_of(og2genes_file):
     """OrthoDB release as named by the dump files, e.g. odb12v2_OG2genes.tab.gz"""
     return os.path.basename(og2genes_file).split('_')[0]
+
+
+def api_release_of(odb_version):
+    """The release id the API reports for this version, stored so the pipeline can compare it
+    with the one served at run time."""
+    response = requests.get(RELEASE_URL.format(odb_version=odb_version))
+    response.raise_for_status()
+    return response.text.strip().strip('"')
 
 
 def check_dump_files(og2genes_file, og_aa_fasta_file):
@@ -152,7 +161,8 @@ def main():
     with duckdb.connect(args.output) as con:
         build_og2genes(con, og2genes_file)
         build_proteins(con, og_aa_fasta_file)
-        con.execute("CREATE TABLE meta AS SELECT ? AS release", [release])
+        con.execute("CREATE TABLE meta AS SELECT ? AS release, ? AS api_release",
+                    [release, api_release_of(args.odb_version)])
         n_pairs = con.execute("SELECT count(*) FROM og2genes").fetchone()[0]
         n_proteins = con.execute("SELECT count(*) FROM proteins").fetchone()[0]
 
