@@ -27,24 +27,28 @@ CLUSTER_PROTEINS = """
 """
 
 
-def connect(orthodb_db, threads=None):
-    """Open the database using only the cores the task was given. Duckdb picks up the memory
-    limit from the cgroup on its own, but not the core count"""
-    config = {"threads": threads} if threads else {}
+def connect(orthodb_db, threads=None, memory=None, temp_directory="."):
+    """Open the database within the resources the task was given. Duckdb otherwise sizes itself
+    from the whole machine, and under a scheduler it is killed rather than spilling to disk"""
+    config = {"temp_directory": temp_directory}
+    if threads:
+        config["threads"] = threads
+    if memory:
+        config["memory_limit"] = memory
     return duckdb.connect(orthodb_db, read_only=True, config=config)
 
 
-def count_proteins(clusters, orthodb_db, threads=None):
+def count_proteins(clusters, orthodb_db, threads=None, memory=None):
     """how many proteins the given clusters hold, without materialising any of them"""
-    with connect(orthodb_db, threads) as con:
+    with connect(orthodb_db, threads, memory) as con:
         return con.execute(f"SELECT count(*) FROM ({CLUSTER_PROTEINS})", [clusters]).fetchone()[0]
 
 
-def write_combined_fa(clusters, orthodb_db, fasta_file_path, threads=None):
+def write_combined_fa(clusters, orthodb_db, fasta_file_path, threads=None, memory=None):
     """Write the proteins of the given clusters, joining OG membership and sequences in the
     database built by accessory/orthodb.py. Return the number of proteins written"""
     n_proteins = 0
-    with connect(orthodb_db, threads) as con:
+    with connect(orthodb_db, threads, memory) as con:
         query = con.execute(CLUSTER_PROTEINS, [clusters])
         with open(fasta_file_path, 'w') as outfile:
             #   fetch in batches, a taxon can hold well over a million sequences
@@ -76,6 +80,10 @@ def main():
         "--threads", type=int, default=None, help="Cores the task was allocated"
     )
     parser.add_argument(
+        "--memory", type=str, default=None, help="""Memory the task was allocated, e.g. 36GB. Duckdb
+        does not see the scheduler's limit, so without this it is killed instead of spilling to disk"""
+    )
+    parser.add_argument(
         "--min_proteins", type=int, default=0, help="""Minimum number of proteins required to keep the
         taxon. Below it no fasta is produced and the taxon is traced in low_proteins.csv, which drops
         every genome that resolved to it"""
@@ -99,7 +107,7 @@ def main():
 
     #   counting first keeps a dropped taxon from writing a fasta only to have it thrown away
     if args.min_proteins:
-        n_proteins = count_proteins(clusters, args.orthodb_db, args.threads)
+        n_proteins = count_proteins(clusters, args.orthodb_db, args.threads, args.memory)
         if n_proteins < args.min_proteins:
             logging.warning(f"Dropping taxid {args.taxid}: {n_proteins} proteins, "
                             f"minimum is {args.min_proteins}")
@@ -107,7 +115,7 @@ def main():
                 trace.write(f"{args.taxid},{n_proteins}\n")
             return
 
-    n_proteins = write_combined_fa(clusters, args.orthodb_db, args.output, args.threads)
+    n_proteins = write_combined_fa(clusters, args.orthodb_db, args.output, args.threads, args.memory)
     logging.info(f"Wrote {n_proteins} proteins to {args.output}")
 
 

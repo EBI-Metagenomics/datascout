@@ -26,7 +26,8 @@ process BUILD_ORTHODB_FASTA {
     """
     build_orthodb_fasta.py --taxid ${taxid} --clusters_file ${clusters_file} \\
         --output combined_orthodb_${taxid}.faa --orthodb_db ${orthodb_db} \\
-        --min_proteins ${min_proteins} --threads ${task.cpus}
+        --min_proteins ${min_proteins} --threads ${task.cpus} \\
+        --memory ${(task.memory.toGiga() * 0.8) as int}GB
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
