@@ -40,7 +40,7 @@ def connect(output, threads=None, memory=None):
 
 
 def dump_urls(odb_version):
-    """the download url of each needed file, as listed by OrthoDB for that version"""
+    """The download URL of each needed file, as listed by OrthoDB for that version"""
     dump_url = DUMP_URL.format(odb_version=odb_version)
     listing = SESSION.get(dump_url, timeout=60)
     listing.raise_for_status()
