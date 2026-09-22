@@ -48,7 +48,7 @@ def connect(orthodb_db, threads=None, memory=None, temp_directory="."):
 
 
 def count_proteins(clusters, orthodb_db, threads=None, memory=None):
-    """how many proteins the given clusters hold, without materialising any of them"""
+    """Count how many proteins the given clusters hold, without materialising any of them"""
     with connect(orthodb_db, threads, memory) as con:
         return con.execute(f"SELECT count(*) FROM ({CLUSTER_PROTEINS})", [clusters]).fetchone()[0]
 
