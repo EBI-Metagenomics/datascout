@@ -124,7 +124,7 @@ def main():
         print(f"OrthoDB: {dump_release(args.orthodb_db)}")
         return
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
     if args.resolve_release:
         resolve_release(args.odb_version)
