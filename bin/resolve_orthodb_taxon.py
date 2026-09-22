@@ -26,7 +26,23 @@ class OrthoDBRequestError(Exception):
     """Raised when an OrthoDB search request fails after all retries are exhausted."""
 
 
-def parse_taxa(taxa_file):
+def parse_taxa(taxa_file: str) -> dict[str, str]:
+    """
+    Read a tab-separated taxonomic lineage file and return a taxid-to-rank map.
+
+    Each line has columns rank, taxid, name (no header), with the most specific
+    rank listed first.
+    Only the rank and taxid columns are used.
+
+    Example file contents::
+
+        species	5693	Trypanosoma cruzi
+        subgenus	47570	Schizotrypanum
+        genus	5690	Trypanosoma
+
+    :param taxa_file: Path to the tab-separated lineage file.
+    :return: Mapping of taxid to its rank name, in file order.
+    """
     logging.info("Parsing taxa lineages from file")
     tax_dict = {}
     with open(taxa_file, 'r') as taxa:
@@ -36,12 +52,21 @@ def parse_taxa(taxa_file):
             tax_dict[data[1]] = data[0]
     return tax_dict
 
-def resolve_taxon(taxa_dict, max_lineage=None):
+def resolve_taxon(taxa_dict: dict[str, str], max_lineage: str | None = None) -> tuple[str | None, list[tuple[str, str]] | None]:
     """
-    Walk the lineage most-specific-first and return (resolved_taxid, clusters) for
-    the first rank OrthoDB has ortholog groups for, stopping early if max_lineage
-    is reached. clusters is a list of (cluster_id, gene_count) tuples. Returns
-    (None, None) if no rank in scope has data.
+    Find the first taxonomic rank in the lineage that has OrthoDB ortholog groups.
+
+    Walks the lineage most-specific-first, querying OrthoDB at each rank until
+    one has ortholog groups or ``max_lineage`` is reached.
+
+    :param taxa_dict: Mapping of taxid to rank name, most specific first (as
+        returned by :func:`parse_taxa`).
+    :param max_lineage: Least specific rank to search up to; stop early once
+        this rank is reached with no match. If not given, the whole lineage
+        is searched.
+    :return: A ``(resolved_taxid, clusters)`` tuple, where ``clusters`` is a
+        list of ``(cluster_id, gene_count)`` tuples. ``(None, None)`` if no
+        rank in scope has data.
     """
     num_ranks = len(taxa_dict)
     logging.info(f"Resolving OrthoDB taxon: {num_ranks} taxonomic rank(s) available in lineage, most specific first")
@@ -70,6 +95,15 @@ def resolve_taxon(taxa_dict, max_lineage=None):
         gene_counts = {entry["id"]: entry.get("gene_count", "") for entry in data.get("bigdata", [])}
         clusters = [(cluster_id, gene_counts.get(cluster_id, "")) for cluster_id in cluster_ids]
         logging.info(f"Found {data['count']} clusters for taxid {taxid}")
+
+        total_proteins = sum(
+            int(gene_count) for _, gene_count in clusters if str(gene_count).isdigit()
+        )
+        logging.info(
+            f"Taxid {taxid}: ~{total_proteins} protein sequences expected "
+            f"across {len(clusters)} clusters"
+        )
+
         return taxid, clusters
 
     logging.error(
@@ -79,7 +113,19 @@ def resolve_taxon(taxa_dict, max_lineage=None):
     return None, None
 
 
-def query_orthodb_search(query_terms):
+def query_orthodb_search(query_terms: dict[str, str]) -> requests.Response:
+    """
+    Query OrthoDB's search endpoint, retrying on failure with exponential backoff.
+
+    Retries up to ``MAX_RETRIES`` times (with jittered exponential backoff
+    between attempts) on request errors, non-OK responses, or a response
+    body that isn't valid JSON, since OrthoDB can return HTTP 200 with an
+    HTML/empty error body.
+
+    :param query_terms: Query parameters to send to ``SEARCH_URL``.
+    :return: The successful response, with a validated JSON body.
+    :raises OrthoDBRequestError: If all retry attempts are exhausted.
+    """
     last_error = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
@@ -118,7 +164,10 @@ def query_orthodb_search(query_terms):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Resolve which OrthoDB taxon a genome's lineage maps to, and list its ortholog clusters"
+        description="Resolve which OrthoDB taxon a sample's lineage maps to by walking ranks "
+                     "most-specific-first until one has ortholog groups, and list its clusters. "
+                     "Writes <sample_id>_taxon.txt and <sample_id>_clusters.tsv, or "
+                     "no_orthodb_taxon.csv if no rank matched"
     )
     parser.add_argument(
         "-t", "--tax_file", type=str, help="File with taxonomic lineage information"
@@ -149,7 +198,7 @@ def main():
         print(f"OrthoDB: {version}")
         return
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
     if not args.tax_file or not args.sample_id:
         parser.error("--tax_file and --sample_id are required unless --version is specified")
@@ -164,8 +213,7 @@ def main():
         sys.exit(1)
 
     if taxid is None:
-        #   trace the sample instead of producing a taxon/clusters output,
-        #   mirroring how ncbi_orthodb_data.py traces dropped samples to low_proteins.csv
+        #   log the samples for which there are no ortholog clusters in OrthoDB
         with open("no_orthodb_taxon.csv", "w") as trace:
             trace.write(f"{args.sample_id}\n")
         return
