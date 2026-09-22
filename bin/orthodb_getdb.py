@@ -142,10 +142,10 @@ def main():
         "-o", "--output", type=str, default="orthodb.duckdb", help="database to write [default: orthodb.duckdb]"
     )
     parser.add_argument(
-        "--og2genes", type=str, default="", help="OG2genes file of the dump. Downloaded when not given"
+        "--og2genes", type=str, default=None, help="OG2genes file of the dump. Downloaded when not given"
     )
     parser.add_argument(
-        "--og_aa_fasta", type=str, default="", help="og_aa_fasta file of the dump. Downloaded when not given"
+        "--og_aa_fasta", type=str, default=None, help="og_aa_fasta file of the dump. Downloaded when not given"
     )
     parser.add_argument(
         "--download_dir", type=str, default=".", help="where missing dump files are downloaded to [default: .]"
