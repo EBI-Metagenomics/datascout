@@ -82,7 +82,7 @@ def api_release_of(odb_version):
 
 
 def check_dump_files(og2genes_file, og_aa_fasta_file):
-    """fail before the long load when a file is missing, or when the two were swapped: the
+    """Fail before the long load when a file is missing, or when the two were swapped: the
     OG2genes dump is two tab separated columns starting with an OG id, the fasta starts with >"""
     for file_path in (og2genes_file, og_aa_fasta_file):
         if not os.path.exists(file_path):
