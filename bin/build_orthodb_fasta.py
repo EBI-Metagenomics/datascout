@@ -89,7 +89,7 @@ def main():
         "--clusters_file", type=str, help="Cluster list written by resolve_orthodb_taxon.py"
     )
     parser.add_argument(
-        "-o", "--output", type=str, help="combined fasta to write"
+        "-o", "--output", type=str, help="Combined fasta file to write"
     )
     parser.add_argument(
         "--orthodb_db", type=str, default="", help="""Path to the OrthoDB database built by
