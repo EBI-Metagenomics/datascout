@@ -8,8 +8,8 @@ nextflow_process {
     tag "ci"
 
     //   built from a miniature dump rather than the real 39 GB one, which still exercises the
-    //   fifo the fasta is read through and the release recorded in the database
-    test("Should build a database from dump files already on disk") {
+    //   fifo the fasta is read through and the release the database is kept under
+    test("Should build a database for the release the run uses") {
 
         when {
             params {
@@ -17,8 +17,8 @@ nextflow_process {
             }
             process {
                 """
-                input[0] = "v12"
-                input[1] = "v12.2"
+                input[0] = "v12.2"
+                input[1] = "${outputDir}/orthodb_db/v12.2/orthodb.duckdb"
                 input[2] = "\$projectDir/tests/reference_databases/odb12v2_OG2genes.tab.gz"
                 input[3] = "\$projectDir/tests/reference_databases/odb12v2_og_aa_fasta.gz"
                 """
@@ -27,9 +27,12 @@ nextflow_process {
 
         then {
             assert process.success
-            assert file(process.out.orthodb_db.get(0)).exists()
-            //   the release comes from the dump file names, so BUILD_ORTHODB_FASTA can report it
-            assert file(process.out.versions.get(0)).text.contains("OrthoDB: odb12v2")
+            //   the database is kept under its release, outside the work directory, so a later
+            //   run finds it there rather than building it again
+            def db = process.out.orthodb_db.get(0)
+            assert db ==~ /.*\/orthodb_db\/v12\.2\/orthodb\.duckdb/
+            assert file(db).exists()
+            assert file(process.out.versions.get(0)).text.contains("OrthoDB: v12.2")
         }
 
     }

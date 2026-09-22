@@ -100,13 +100,22 @@ DATABASE OPTIONS:
                           Used for taxonomic lineage parsing.
   --sqlite <dir>          Path to NCBI sqlite database. Will be downloaded if not provided.
                           Used for taxonomic lineage parsing.
-  --orthodb_db_dir <dir>  Where the OrthoDB databases are kept, one directory per OrthoDB
-                          release. A release already built there is reused, otherwise
-                          ORTHODB_GETDB builds it. [default: orthodb_db]
-  --orthodb_version <str> OrthoDB version the whole run is pinned to: cluster lists are listed
-                          from it and the database is built from it. [default: v12]
+  --orthodb_db_dir <dir>  Path where the OrthoDB databases are kept, one directory per OrthoDB
+                          release. The database of the release the run is pinned to is reused
+                          when it is already there, and built when it is not, so point this at
+                          a shared location to build each release once. A database is only
+                          reused while the API still serves its release, which
+                          https://data.orthodb.org/v12/orthodb_release_id reports.
+                          [default: orthodb_db]
+  --orthodb_version <str> OrthoDB release the whole run is pinned to, for example v12.2. Its
+                          major version is what the API accepts in a path, so the cluster lists
+                          and the database both come from this release. The run is refused when
+                          the API no longer serves it, since OrthoDB re-uses orthologous group
+                          ids between releases. [default: v12.2]
   --orthodb_og2genes <file>, --orthodb_og_aa_fasta <file>
-                          Dump files already on disk, to build from without downloading.
+                          Dump files already on disk. Given together, ORTHODB_GETDB builds from
+                          them instead of downloading them from
+                          https://data.orthodb.org/v12/download/odb_data_dump/.
   --rfam_db <file>        Path to the latest available public Rfam database connection config.
                           [default: ${projectDir}/assets/rfam_db.txt]
                           Used for RNA family searches.
@@ -146,13 +155,11 @@ Databases are kept one directory per release:
 
 ```
 orthodb_db/v12.2/orthodb.duckdb
-orthodb_db/v12.3/orthodb.duckdb     # e.g. once OrthoDB moves on and the pipeline rebuilds
+orthodb_db/v12.3/orthodb.duckdb     # e.g. once OrthoDB moves on and the run is re-pinned
 ```
 
 The database holds three tables: `og2genes` maps orthologous groups to gene ids, `proteins` holds
-one sequence per gene id, and `meta` records which OrthoDB release it was built from, `release`
-naming the data dump (`odb12v2`), `api_release` the release the API reported (`v12.2`) and
-`odb_version` the version asked for (`v12`).
+one sequence per gene id, and `meta` records the OrthoDB release it was built from, `v12.2`.
 
 To build it yourself, once, rather than inside a pipeline run:
 

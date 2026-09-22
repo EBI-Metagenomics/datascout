@@ -3,15 +3,6 @@
 import argparse
 import logging
 import duckdb
-import requests
-from requests.adapters import HTTPAdapter, Retry
-
-#   the version the pipeline's cluster lists come from, matching resolve_orthodb_taxon.py
-RELEASE_URL = "https://data.orthodb.org/{odb_version}/orthodb_release_id"
-
-SESSION = requests.Session()
-SESSION.mount("https://", HTTPAdapter(max_retries=Retry(
-    total=5, backoff_factor=2, status_forcelist=[429, 500, 502, 503, 504])))
 
 
 def parse_clusters(clusters_file):
@@ -24,7 +15,7 @@ def parse_clusters(clusters_file):
 
 
 def dump_release(orthodb_db):
-    """OrthoDB release recorded by orthodb_getdb.py when it built the database"""
+    """OrthoDB release recorded by orthodb_getdb.py when it built the database, e.g. v12.2"""
     with duckdb.connect(orthodb_db, read_only=True) as con:
         return con.execute("SELECT release FROM meta").fetchone()[0]
 
@@ -51,17 +42,6 @@ def count_proteins(clusters, orthodb_db, threads=None, memory=None):
     """Count how many proteins the given clusters hold, without materialising any of them"""
     with connect(orthodb_db, threads, memory) as con:
         return con.execute(f"SELECT count(*) FROM ({CLUSTER_PROTEINS})", [clusters]).fetchone()[0]
-
-
-def resolve_release(odb_version):
-    """Write the OrthoDB release the given version currently resolves to."""
-    response = SESSION.get(RELEASE_URL.format(odb_version=odb_version), timeout=60)
-    response.raise_for_status()
-    api_release = response.text.strip().strip('"')
-    logging.info(f"OrthoDB {odb_version} resolves to {api_release}")
-    with open("release.txt", "w") as release:
-        release.write(f"{api_release}\n")
-
 
 def write_combined_fa(clusters, orthodb_db, fasta_file_path, threads=None, memory=None):
     """Write the proteins of the given clusters, joining OG membership and sequences in the
@@ -93,7 +73,7 @@ def main():
     )
     parser.add_argument(
         "--orthodb_db", type=str, default="", help="""Path to the OrthoDB database built by
-        ORTHODB_GETDB, the source of the protein sequences. Required unless --resolve_release"""
+        ORTHODB_GETDB, the source of the protein sequences"""
     )
     parser.add_argument(
         "--threads", type=int, default=None, help="Cores the task was allocated"
@@ -108,14 +88,6 @@ def main():
         every genome that resolved to it"""
     )
     parser.add_argument(
-        "--resolve_release", action="store_true", help="""Write the OrthoDB release
-        --odb_version resolves to, and exit"""
-    )
-    parser.add_argument(
-        "--odb_version", type=str, default="v12", help="""OrthoDB version the run is pinned to,
-        as it appears in the data.orthodb.org path [default: v12]"""
-    )
-    parser.add_argument(
         "--version", action="store_true", help="Show orthodb version number and exit"
     )
     args = parser.parse_args()
@@ -125,10 +97,6 @@ def main():
         return
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-
-    if args.resolve_release:
-        resolve_release(args.odb_version)
-        return
 
     if not args.orthodb_db:
         parser.error("--orthodb_db is required")

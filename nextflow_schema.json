@@ -58,30 +58,30 @@
         "orthodb_db_dir": {
           "type": "string",
           "format": "directory-path",
-          "description": "Where ORTHODB_GETDB keeps the OrthoDB database it builds",
-          "help_text": "One directory per OrthoDB release is kept here, so a release already built is reused and a new one is built beside it. Point it at a shared location to build the database once.",
+          "description": "Where the OrthoDB databases are kept",
+          "help_text": "Path where the OrthoDB databases are kept, one directory per OrthoDB release. The database of the release the run is pinned to is reused when it is already there, and built when it is not, so point this at a shared location to build each release once.",
           "fa_icon": "fas fa-folder",
           "default": "orthodb_db"
         },
         "orthodb_version": {
           "type": "string",
-          "description": "OrthoDB version ORTHODB_GETDB downloads the data dump from",
-          "help_text": "As it appears in the data.orthodb.org path, for example v12 or current. The cluster lists are listed from it and the database is built from it, so the two cannot disagree.",
+          "description": "OrthoDB release the run uses",
+          "help_text": "OrthoDB release the run uses, for example v12.2, as reported by https://data.orthodb.org/v12/orthodb_release_id. It names the directory its database is kept in, and its major version is what the API accepts in a path. Running with a release older than the one OrthoDB now serves is fine, it is only warned about.",
           "fa_icon": "fas fa-tag",
-          "default": "v12"
+          "default": "v12.2"
         },
         "orthodb_og2genes": {
           "type": "string",
           "format": "file-path",
           "description": "Path to the OG2genes file of an OrthoDB data dump already on disk",
-          "help_text": "Given together with the other dump file, ORTHODB_GETDB builds from them instead of downloading the data dump.",
+          "help_text": "Given together with the other dump file, ORTHODB_GETDB builds from them instead of downloading them from https://data.orthodb.org/v12/download/odb_data_dump/.",
           "fa_icon": "fas fa-file-archive"
         },
         "orthodb_og_aa_fasta": {
           "type": "string",
           "format": "file-path",
           "description": "Path to the og_aa_fasta file of an OrthoDB data dump already on disk",
-          "help_text": "Given together with the other dump file, ORTHODB_GETDB builds from them instead of downloading the data dump.",
+          "help_text": "Given together with the other dump file, ORTHODB_GETDB builds from them instead of downloading them from https://data.orthodb.org/v12/download/odb_data_dump/.",
           "fa_icon": "fas fa-file-archive"
         },
         "rfam_db": {
