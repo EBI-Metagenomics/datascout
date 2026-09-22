@@ -8,7 +8,7 @@ nextflow_process {
     tag "ci"
 
     //   built from a miniature dump rather than the real 39 GB one, which still exercises the
-    //   fifo the fasta is read through and the release recorded for CHECK_ORTHODB_RELEASE
+    //   fifo the fasta is read through and the release recorded in the database
     test("Should build a database from dump files already on disk") {
 
         when {
@@ -18,8 +18,9 @@ nextflow_process {
             process {
                 """
                 input[0] = "v12"
-                input[1] = "\$projectDir/tests/reference_databases/odb12v2_OG2genes.tab.gz"
-                input[2] = "\$projectDir/tests/reference_databases/odb12v2_og_aa_fasta.gz"
+                input[1] = "v12.2"
+                input[2] = "\$projectDir/tests/reference_databases/odb12v2_OG2genes.tab.gz"
+                input[3] = "\$projectDir/tests/reference_databases/odb12v2_og_aa_fasta.gz"
                 """
             }
         }

@@ -4,9 +4,14 @@ import argparse
 import logging
 import duckdb
 import requests
+from requests.adapters import HTTPAdapter, Retry
 
+#   the version the pipeline's cluster lists come from, matching resolve_orthodb_taxon.py
+RELEASE_URL = "https://data.orthodb.org/{odb_version}/orthodb_release_id"
 
-VERSION_URL = "https://data.orthodb.org/current/orthodb_release_id"
+SESSION = requests.Session()
+SESSION.mount("https://", HTTPAdapter(max_retries=Retry(
+    total=5, backoff_factor=2, status_forcelist=[429, 500, 502, 503, 504])))
 
 
 def parse_clusters(clusters_file):
@@ -48,19 +53,14 @@ def count_proteins(clusters, orthodb_db, threads=None, memory=None):
         return con.execute(f"SELECT count(*) FROM ({CLUSTER_PROTEINS})", [clusters]).fetchone()[0]
 
 
-def check_release(orthodb_db, version_url=VERSION_URL):
-    """Cluster ids only mean the same thing in the release they were listed from: OrthoDB
-    re-uses OG ids between releases, so a newer API silently points at different groups"""
-    with connect(orthodb_db) as con:
-        db_release = con.execute("SELECT api_release FROM meta").fetchone()[0]
-    response = requests.get(version_url, timeout=60)
+def resolve_release(odb_version):
+    """Write the OrthoDB release the given version currently resolves to."""
+    response = SESSION.get(RELEASE_URL.format(odb_version=odb_version), timeout=60)
     response.raise_for_status()
     api_release = response.text.strip().strip('"')
-    if db_release != api_release:
-        raise SystemExit(f"OrthoDB release mismatch: the API serves {api_release}, the database "
-                         f"was built from {db_release}. Rebuild it with ORTHODB_GETDB, or "
-                         f"point the pipeline at a database built from {api_release}.")
-    logging.info(f"OrthoDB {api_release} matches the database")
+    logging.info(f"OrthoDB {odb_version} resolves to {api_release}")
+    with open("release.txt", "w") as release:
+        release.write(f"{api_release}\n")
 
 
 def write_combined_fa(clusters, orthodb_db, fasta_file_path, threads=None, memory=None):
@@ -92,8 +92,8 @@ def main():
         "-o", "--output", type=str, help="combined fasta to write"
     )
     parser.add_argument(
-        "--orthodb_db", type=str, required=True, help="""Path to the OrthoDB database built by
-        ORTHODB_GETDB, the source of the protein sequences"""
+        "--orthodb_db", type=str, default="", help="""Path to the OrthoDB database built by
+        ORTHODB_GETDB, the source of the protein sequences. Required unless --resolve_release"""
     )
     parser.add_argument(
         "--threads", type=int, default=None, help="Cores the task was allocated"
@@ -108,8 +108,12 @@ def main():
         every genome that resolved to it"""
     )
     parser.add_argument(
-        "--check_release", action="store_true", help="""Check the database was built from the
-        OrthoDB release the API currently serves, and exit"""
+        "--resolve_release", action="store_true", help="""Write the OrthoDB release
+        --odb_version resolves to, and exit"""
+    )
+    parser.add_argument(
+        "--odb_version", type=str, default="v12", help="""OrthoDB version the run is pinned to,
+        as it appears in the data.orthodb.org path [default: v12]"""
     )
     parser.add_argument(
         "--version", action="store_true", help="Show orthodb version number and exit"
@@ -122,9 +126,12 @@ def main():
 
     logging.basicConfig(level=logging.INFO)
 
-    if args.check_release:
-        check_release(args.orthodb_db)
+    if args.resolve_release:
+        resolve_release(args.odb_version)
         return
+
+    if not args.orthodb_db:
+        parser.error("--orthodb_db is required")
 
     if not args.taxid or not args.clusters_file or not args.output:
         parser.error("--taxid, --clusters_file and --output are required unless --version is specified")

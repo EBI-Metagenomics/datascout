@@ -5,8 +5,6 @@
 Turns the OrthoDB data dump into a database BUILD_ORTHODB_FASTA can query, instead of
 downloading one cluster at a time from the OrthoDB API. Only two files of the dump are
 needed, OG2genes and og_aa_fasta, and they are downloaded when not provided.
-
-Run once per OrthoDB release. The pipeline runs it for you when --orthodb_db is not given.
 """
 
 import argparse
@@ -19,16 +17,32 @@ import subprocess
 import tempfile
 import duckdb
 import requests
+from requests.adapters import HTTPAdapter, Retry
 
 DUMP_URL = "https://data.orthodb.org/{odb_version}/download/odb_data_dump/"
 RELEASE_URL = "https://data.orthodb.org/{odb_version}/orthodb_release_id"
 DUMP_FILES = {"og2genes": r"\S+_OG2genes\.tab\.gz", "og_aa_fasta": r"\S+_og_aa_fasta\.gz"}
 
+SESSION = requests.Session()
+SESSION.mount("https://", HTTPAdapter(max_retries=Retry(
+    total=5, backoff_factor=2, status_forcelist=[429, 500, 502, 503, 504])))
+
+
+def connect(output, threads=None, memory=None):
+    """Build within the resources the task was given. Duckdb otherwise sizes itself from the
+    whole machine, and under a scheduler it is killed rather than spilling to disk"""
+    config = {"temp_directory": "."}
+    if threads:
+        config["threads"] = threads
+    if memory:
+        config["memory_limit"] = memory
+    return duckdb.connect(output, config=config)
+
 
 def dump_urls(odb_version):
     """the download url of each needed file, as listed by OrthoDB for that version"""
     dump_url = DUMP_URL.format(odb_version=odb_version)
-    listing = requests.get(dump_url)
+    listing = SESSION.get(dump_url, timeout=60)
     listing.raise_for_status()
     urls = {}
     for name, pattern in DUMP_FILES.items():
@@ -46,7 +60,7 @@ def download(url, download_dir):
         logging.info(f"{file_path} is already downloaded")
         return file_path
     logging.info(f"Downloading {url}, this takes a while")
-    with requests.get(url, stream=True) as response:
+    with SESSION.get(url, stream=True, timeout=60) as response:
         response.raise_for_status()
         with open(file_path, 'wb') as dump_file:
             for chunk in response.iter_content(chunk_size=2**20):
@@ -62,7 +76,7 @@ def release_of(og2genes_file):
 def api_release_of(odb_version):
     """The release id the API reports for this version, stored so the pipeline can compare it
     with the one served at run time."""
-    response = requests.get(RELEASE_URL.format(odb_version=odb_version))
+    response = SESSION.get(RELEASE_URL.format(odb_version=odb_version), timeout=60)
     response.raise_for_status()
     return response.text.strip().strip('"')
 
@@ -137,6 +151,12 @@ def main():
         "--download_dir", type=str, default=".", help="where missing dump files are downloaded to [default: .]"
     )
     parser.add_argument(
+        "--threads", type=int, default=None, help="Cores the task was allocated."
+    )
+    parser.add_argument(
+        "--memory", type=str, default=None, help="""Memory the task was allocated, e.g. 28GB."""
+    )
+    parser.add_argument(
         "--odb_version", type=str, default="v12", help="""OrthoDB version to download the dump from,
         as it appears in the data.orthodb.org path, e.g. v11 or current [default: v12]"""
     )
@@ -156,12 +176,14 @@ def main():
 
     check_dump_files(og2genes_file, og_aa_fasta_file)
 
-    release = release_of(og2genes_file)
-    with duckdb.connect(args.output) as con:
+    #   resolved before the loading below, so a failed request costs a second rather than hours
+    release, api_release = release_of(og2genes_file), api_release_of(args.odb_version)
+
+    with connect(args.output, args.threads, args.memory) as con:
         build_og2genes(con, og2genes_file)
         build_proteins(con, og_aa_fasta_file)
-        con.execute("CREATE TABLE meta AS SELECT ? AS release, ? AS api_release",
-                    [release, api_release_of(args.odb_version)])
+        con.execute("CREATE TABLE meta AS SELECT ? AS release, ? AS api_release, ? AS odb_version",
+                    [release, api_release, args.odb_version])
         n_pairs = con.execute("SELECT count(*) FROM og2genes").fetchone()[0]
         n_proteins = con.execute("SELECT count(*) FROM proteins").fetchone()[0]
 

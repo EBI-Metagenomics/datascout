@@ -9,8 +9,8 @@ import time
 import requests
 
 #   set request static params beforehand
-SEARCH_URL = "https://data.orthodb.org/current/search?"
-VERSION_URL = "https://data.orthodb.org/current/orthodb_release_id"
+SEARCH_URL = "https://data.orthodb.org/{odb_version}/search?"
+VERSION_URL = "https://data.orthodb.org/{odb_version}/orthodb_release_id"
 
 SEARCH_URL_ARGS = {
     "universal": "0.9",
@@ -36,7 +36,7 @@ def parse_taxa(taxa_file):
             tax_dict[data[1]] = data[0]
     return tax_dict
 
-def resolve_taxon(taxa_dict, max_lineage=None):
+def resolve_taxon(taxa_dict, odb_version, max_lineage=None):
     """
     Walk the lineage most-specific-first and return (resolved_taxid, clusters) for
     the first rank OrthoDB has ortholog groups for, stopping early if max_lineage
@@ -56,7 +56,7 @@ def resolve_taxon(taxa_dict, max_lineage=None):
         )
 
         logging.info(f"[{rank_num}/{num_ranks}] Searching OrthoDB entries for taxid {taxid} (rank: {rank})")
-        response = query_orthodb_search(query_terms)
+        response = query_orthodb_search(query_terms, odb_version)
         data = response.json()
 
         if data["count"] == "0":
@@ -79,11 +79,12 @@ def resolve_taxon(taxa_dict, max_lineage=None):
     return None, None
 
 
-def query_orthodb_search(query_terms):
+def query_orthodb_search(query_terms, odb_version):
+    search_url = SEARCH_URL.format(odb_version=odb_version)
     last_error = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            response = requests.get(url=SEARCH_URL, params=query_terms, timeout=REQUEST_TIMEOUT)
+            response = requests.get(url=search_url, params=query_terms, timeout=REQUEST_TIMEOUT)
             if response.ok and response.content:
                 #   validate the body is actually JSON before handing it back,
                 #   since OrthoDB can return a 200 with an HTML/empty error body
@@ -134,13 +135,19 @@ def main():
         "--sample_id", type=str, default="", help="Sample identifier used when naming output files"
     )
     parser.add_argument(
+        "--odb_version", type=str, default="v12", help="""OrthoDB version to list clusters from,
+        as it appears in the data.orthodb.org path. Has to be the one the database was built
+        from, since OrthoDB re-uses cluster ids between releases [default: v12]"""
+    )
+    parser.add_argument(
         "--version", action="store_true", help="Show orthodb version number and exit"
     )
     args = parser.parse_args()
 
     if args.version:
         try:
-            version_response = requests.get(VERSION_URL, timeout=REQUEST_TIMEOUT)
+            version_response = requests.get(VERSION_URL.format(odb_version=args.odb_version),
+                                            timeout=REQUEST_TIMEOUT)
             version_response.raise_for_status()
             version = version_response.text.strip('"')
         except requests.exceptions.RequestException as e:
@@ -158,7 +165,7 @@ def main():
 
     try:
         taxa_dict = parse_taxa(args.tax_file)
-        taxid, clusters = resolve_taxon(taxa_dict, max_lineage)
+        taxid, clusters = resolve_taxon(taxa_dict, args.odb_version, max_lineage)
     except OrthoDBRequestError as e:
         logging.error(f"Aborting: could not resolve OrthoDB taxon for {args.sample_id}. {e}")
         sys.exit(1)

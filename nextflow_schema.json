@@ -55,25 +55,18 @@
           "help_text": "Path to NCBI sqlite database used for taxonomic lineage parsing",
           "fa_icon": "fas fa-folder"
         },
-        "orthodb_db": {
-          "type": "string",
-          "format": "file-path",
-          "description": "Path to an existing OrthoDB database",
-          "help_text": "OrthoDB protein sequences are read from this database rather than downloaded one cluster at a time from the OrthoDB API. When left empty the pipeline builds one with ORTHODB_GETDB, which downloads about 39 GB of the OrthoDB data dump.",
-          "fa_icon": "fas fa-database"
-        },
         "orthodb_db_dir": {
           "type": "string",
           "format": "directory-path",
           "description": "Where ORTHODB_GETDB keeps the OrthoDB database it builds",
-          "help_text": "Only used when orthodb_db is empty. The database is built once and kept here, so later runs reuse it instead of downloading the data dump again.",
+          "help_text": "One directory per OrthoDB release is kept here, so a release already built is reused and a new one is built beside it. Point it at a shared location to build the database once.",
           "fa_icon": "fas fa-folder",
           "default": "orthodb_db"
         },
         "orthodb_version": {
           "type": "string",
           "description": "OrthoDB version ORTHODB_GETDB downloads the data dump from",
-          "help_text": "As it appears in the data.orthodb.org path, for example v12 or current. Only used when orthodb_db is empty.",
+          "help_text": "As it appears in the data.orthodb.org path, for example v12 or current. The cluster lists are listed from it and the database is built from it, so the two cannot disagree.",
           "fa_icon": "fas fa-tag",
           "default": "v12"
         },
@@ -81,14 +74,14 @@
           "type": "string",
           "format": "file-path",
           "description": "Path to the OG2genes file of an OrthoDB data dump already on disk",
-          "help_text": "Only used when orthodb_db is empty. Given together with the other dump file, ORTHODB_GETDB builds from them instead of downloading.",
+          "help_text": "Given together with the other dump file, ORTHODB_GETDB builds from them instead of downloading the data dump.",
           "fa_icon": "fas fa-file-archive"
         },
         "orthodb_og_aa_fasta": {
           "type": "string",
           "format": "file-path",
           "description": "Path to the og_aa_fasta file of an OrthoDB data dump already on disk",
-          "help_text": "Only used when orthodb_db is empty. Given together with the other dump file, ORTHODB_GETDB builds from them instead of downloading.",
+          "help_text": "Given together with the other dump file, ORTHODB_GETDB builds from them instead of downloading the data dump.",
           "fa_icon": "fas fa-file-archive"
         },
         "rfam_db": {

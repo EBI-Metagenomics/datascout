@@ -29,7 +29,11 @@ Uses the following filters:
 "universal": "0.9",
 "singlecopy": "0.9"
 
-Cluster lists come from the OrthoDB API, one request per sample. The protein sequences are read from a [local OrthoDB database](#building-the-orthodb-database), which the pipeline builds when `--orthodb_db` is not given.
+The whole run is pinned to one OrthoDB version, `--orthodb_version`, `v12` by default. Cluster lists are listed from it, one request per genome, and the protein sequences are
+read from a [local OrthoDB database](#building-the-orthodb-database) built from the same version. This is important because OrthoDB only mantain the major version into API
+url (`https://data.orthodb.org/v12/`) but the API itself and datasets have minor versions (e.g. `v12.2`).
+That minor release names the directory the database is kept in, so a database found there was built from the release the cluster lists are being listed from, and a new release
+is built beside the old one rather than silently reused.
 
 An optional `orthodb_min_proteins` parameter can be used to force the pipeline to discard genomes whose resolved OrthoDB taxon holds fewer than `orthodb_min_proteins` proteins. The count is per taxon, so a taxon below the threshold drops every genome that resolved to it. This is useful because downstream pipelines, such as the MGnify Genomes Catalogue Pipeline, cannot process genomes with insufficient gene evidence. This is because BRAKER, for example, runs AUGUSTUS, which crashes when the protein evidence file contains too little information to train the model used for predictions ([details in this issue](https://github.com/Gaius-Augustus/BRAKER/issues/8)).
 
@@ -96,11 +100,11 @@ DATABASE OPTIONS:
                           Used for taxonomic lineage parsing.
   --sqlite <dir>          Path to NCBI sqlite database. Will be downloaded if not provided.
                           Used for taxonomic lineage parsing.
-  --orthodb_db <file>     Path to an existing OrthoDB database, the source of the protein
-                          sequences. Built by ORTHODB_GETDB when not given.
-  --orthodb_db_dir <dir>  Where ORTHODB_GETDB keeps the database it builds.
-                          [default: orthodb_db]
-  --orthodb_version <str> OrthoDB version ORTHODB_GETDB downloads. [default: v12]
+  --orthodb_db_dir <dir>  Where the OrthoDB databases are kept, one directory per OrthoDB
+                          release. A release already built there is reused, otherwise
+                          ORTHODB_GETDB builds it. [default: orthodb_db]
+  --orthodb_version <str> OrthoDB version the whole run is pinned to: cluster lists are listed
+                          from it and the database is built from it. [default: v12]
   --orthodb_og2genes <file>, --orthodb_og_aa_fasta <file>
                           Dump files already on disk, to build from without downloading.
   --rfam_db <file>        Path to the latest available public Rfam database connection config.
@@ -138,11 +142,17 @@ PROCESSING OPTIONS:
 which maps orthologous groups to gene ids, and `odb*_og_aa_fasta.gz`, which holds the protein
 sequences.
 
-When `--orthodb_db` is not given, the pipeline runs it for you, downloading about 39 GB and keeping the
-result in `--orthodb_db_dir`.
+Databases are kept one directory per release:
+
+```
+orthodb_db/v12.2/orthodb.duckdb
+orthodb_db/v12.3/orthodb.duckdb     # e.g. once OrthoDB moves on and the pipeline rebuilds
+```
 
 The database holds three tables: `og2genes` maps orthologous groups to gene ids, `proteins` holds
-one sequence per gene id, and `meta` records the OrthoDB release.
+one sequence per gene id, and `meta` records which OrthoDB release it was built from, `release`
+naming the data dump (`odb12v2`), `api_release` the release the API reported (`v12.2`) and
+`odb_version` the version asked for (`v12`).
 
 To build it yourself, once, rather than inside a pipeline run:
 
@@ -158,8 +168,6 @@ python3 bin/orthodb_getdb.py --output orthodb.duckdb \
     --og2genes /path/to/odb12v2_OG2genes.tab.gz \
     --og_aa_fasta /path/to/odb12v2_og_aa_fasta.gz
 ```
-
-Then pass it with `--orthodb_db`.
 
 # Samplesheet
 

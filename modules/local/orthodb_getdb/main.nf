@@ -10,12 +10,13 @@ process ORTHODB_GETDB {
 
     label "process_medium"
 
-    storeDir "${params.orthodb_db_dir}"
+    storeDir "${params.orthodb_db_dir}/${release}"
 
-    tag "${odb_version}"
+    tag "${release}"
 
     input:
       val(odb_version)
+      val(release)
       val(og2genes)
       val(og_aa_fasta)
 
@@ -27,7 +28,8 @@ process ORTHODB_GETDB {
     def dump_args = og2genes && og_aa_fasta ? "--og2genes ${og2genes} --og_aa_fasta ${og_aa_fasta}" : ""
     """
     orthodb_getdb.py --output orthodb.duckdb --odb_version ${odb_version} \\
-        --download_dir . ${dump_args}
+        --download_dir . ${dump_args} \\
+        --threads ${task.cpus} --memory ${(task.memory.toGiga() * 0.8) as int}GB
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
