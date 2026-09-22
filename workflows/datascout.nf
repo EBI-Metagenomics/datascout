@@ -83,7 +83,7 @@ workflow DATASCOUT {
         )
         ch_versions = ch_versions.mix(ORTHODB_GETDB.out.versions)
 
-        orthodb_db = ORTHODB_GETDB.out.orthodb_db.map { db -> db.toString() }
+        orthodb_db = ORTHODB_GETDB.out.orthodb_db
 
         // resolve which OrthoDB taxon each genome maps to, and list that taxon's clusters
         RESOLVE_ORTHODB_TAXON(joined_orthodb, params.max_orthodb_clusters, params.orthodb_version)
