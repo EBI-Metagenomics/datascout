@@ -18,7 +18,7 @@ nextflow_process {
             process {
                 """
                 input[0] = "v12.2"
-                input[1] = ""
+                input[1] = []
                 input[2] = "\$projectDir/tests/reference_databases/odb12v2_OG2genes.tab.gz"
                 input[3] = "\$projectDir/tests/reference_databases/odb12v2_og_aa_fasta.gz"
                 """
@@ -28,7 +28,7 @@ nextflow_process {
         then {
             assert process.success
             def db = process.out.new_db.get(0)
-            assert db ==~ /.*\/v12\.d+\/orthodb\.duckdb/
+            assert db ==~ /.*\/v12\.\d+\/orthodb\.duckdb/
             assert file(db).exists()
             assert file(process.out.versions.get(0)).text.contains("OrthoDB: v12.")
         }
