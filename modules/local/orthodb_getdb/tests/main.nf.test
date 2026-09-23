@@ -27,7 +27,7 @@ nextflow_process {
 
         then {
             assert process.success
-            def db = process.out.orthodb_db.get(0)
+            def db = process.out.new_db.get(0)
             assert db ==~ /.*\/v12\.d+\/orthodb\.duckdb/
             assert file(db).exists()
             assert file(process.out.versions.get(0)).text.contains("OrthoDB: v12.")
