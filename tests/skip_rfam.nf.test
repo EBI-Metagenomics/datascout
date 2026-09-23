@@ -21,6 +21,11 @@ nextflow_pipeline {
                 // Use the mini test databases created by setup
                 taxdump = "${projectDir}/tests/reference_databases/ncbi/mini_taxdump.tar.gz"
                 sqlite = "${projectDir}/tests/reference_databases/ncbi/mini_trypanosoma.sqlite"
+                //   built from the miniature dump below, so no release is baked into a path
+                //   and no 39 GB download can ever be triggered from a test
+                orthodb_db_dir = "$outputDir/orthodb_db"
+                orthodb_og2genes = "${projectDir}/tests/reference_databases/odb12v2_OG2genes.tab.gz"
+                orthodb_og_aa_fasta = "${projectDir}/tests/reference_databases/odb12v2_og_aa_fasta.gz"
 
                 // Set small for fast test
                 max_runs = 1

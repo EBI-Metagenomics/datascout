@@ -1,4 +1,5 @@
 process RESOLVE_ORTHODB_TAXON {
+    maxForks 2
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -12,6 +13,7 @@ process RESOLVE_ORTHODB_TAXON {
     input:
     tuple val(meta), path(tax_ranks), val(max_rank)
     val(max_clusters)
+    val(release)
 
     output:
     tuple val(meta), path("*_taxon.txt"), path("*_clusters.tsv"), emit: taxon_clusters, optional: true
@@ -22,11 +24,11 @@ process RESOLVE_ORTHODB_TAXON {
     def max_clusters_arg = max_clusters && max_clusters > 0 ? "--max_clusters ${max_clusters}" : ""
     """
     resolve_orthodb_taxon.py --tax_file ${tax_ranks} --lineage_max ${max_rank} \\
-        --sample_id ${meta.id} ${max_clusters_arg}
+        --sample_id ${meta.id} --release ${release} ${max_clusters_arg}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        \$(resolve_orthodb_taxon.py --version 2>&1)
+        \$(resolve_orthodb_taxon.py --release ${release} --version 2>&1)
         Python: \$(python --version 2>&1 | sed 's/Python //g')
     END_VERSIONS
     """
