@@ -10,24 +10,31 @@ process ORTHODB_GETDB {
 
     input:
       val(release)
-      val(orthodb_db)
-      val(og2genes)
-      val(og_aa_fasta)
+      path(orthodb_db)
+      path(og2genes)
+      path(og_aa_fasta)
 
     output:
-      val(orthodb_db), emit: orthodb_db
+      path("approved.duckdb"), emit: orthodb_db
       path("versions.yml"), emit: versions
 
     script:
     def dump_args = og2genes && og_aa_fasta ? "--og2genes ${og2genes} --og_aa_fasta ${og_aa_fasta}" : ""
+    def input_arg = orthodb_db ? "--input ${orthodb_db}" : ""
     """
-    orthodb_getdb.py --release ${release} \\
-        --db_dir ${params.orthodb_db_dir} --download_dir . ${dump_args} \\
-        --threads ${task.cpus} --memory ${(task.memory.toGiga() * 0.8) as int}GB
+    approved_db=\$(orthodb_getdb.py \\
+        --release ${release} \\
+        ${input_arg} \\
+        ${dump_args} \\
+        --threads ${task.cpus} \\
+        --memory ${(task.memory.toGiga() * 0.8) as int}GB)
+
+    #   symlinked instead of copying
+    ln -s "\${approved_db}" approved.duckdb
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        \$(build_orthodb_fasta.py --orthodb_db ${orthodb_db} --version 2>&1)
+        \$(build_orthodb_fasta.py --orthodb_db "\${approved_db}" --version 2>&1)
         Python: \$(python --version 2>&1 | sed 's/Python //g')
     END_VERSIONS
     """
