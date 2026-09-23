@@ -69,10 +69,14 @@ workflow DATASCOUT {
         taxa_ch.join(input.rfam_tax).set { joined_rfam }
 
         // query databases for supporting proteins and rnas
-        orthodb_db = "${params.orthodb_db_dir}/${params.orthodb_version}/orthodb.duckdb"
+        orthodb_db = params.orthodb_db_dir ? "${params.orthodb_db_dir}/${params.orthodb_version}/orthodb.duckdb" : []
 
-        ORTHODB_GETDB(params.orthodb_version, orthodb_db,
-                      params.orthodb_og2genes, params.orthodb_og_aa_fasta)
+        ORTHODB_GETDB(
+            params.orthodb_version,
+            orthodb_db,
+            params.orthodb_og2genes    ? file(params.orthodb_og2genes,    checkIfExists: true) : [],
+            params.orthodb_og_aa_fasta ? file(params.orthodb_og_aa_fasta, checkIfExists: true) : []
+        )
         ch_versions = ch_versions.mix(ORTHODB_GETDB.out.versions)
 
         // resolve which OrthoDB taxon each genome maps to, and list that taxon's clusters

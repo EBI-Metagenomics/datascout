@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
-"""Build the OrthoDB duckdb database the pipeline reads protein sequences from.
+"""Get the OrthoDB duckdb database the pipeline reads protein sequences from, building it if needed.
 
-Turns the OrthoDB data dump into a database BUILD_ORTHODB_FASTA can query, instead of
-downloading one cluster at a time from the OrthoDB API. Only two files of the dump are
-needed, OG2genes and og_aa_fasta, and they are downloaded when not provided.
+Given --input, that database is reused as-is when the requested release is still the one OrthoDB
+currently serves; otherwise, or when --input isn't given, a database is built under
+--db_dir/<release> (reusing one already there for that release rather than rebuilding it).
+
+Building turns the OrthoDB data dump into a database BUILD_ORTHODB_FASTA can query, instead of
+downloading one cluster at a time from the OrthoDB API. Only two files of the dump are needed,
+OG2genes and og_aa_fasta, and they are downloaded when not provided.
 """
 
 import argparse
@@ -15,11 +19,13 @@ import re
 import shlex
 import subprocess
 import tempfile
+from pathlib import Path
+
 import duckdb
 import requests
 from requests.adapters import HTTPAdapter, Retry
 
-#   OrthoDB serves a release, v12.2, under the path of its major version, v12
+#   OrthoDB serves a release, v12.2, under the API endpoint of its major version, v12
 DUMP_URL = "https://data.orthodb.org/{major}/download/odb_data_dump/"
 RELEASE_URL = "https://data.orthodb.org/{major}/orthodb_release_id"
 DUMP_FILES = {"og2genes": r"\S+_OG2genes\.tab\.gz", "og_aa_fasta": r"\S+_og_aa_fasta\.gz"}
@@ -41,7 +47,7 @@ def connect(output, threads=None, memory=None):
 
 
 def major_of(release):
-    """the part of a release OrthoDB puts in a path, v12.2 to v12"""
+    """The part of a release OrthoDB puts in the API URL, v12.2 to v12"""
     return release.split('.')[0]
 
 
@@ -55,27 +61,27 @@ def dump_urls(release):
         found = re.search(rf"""href=["']?({pattern})""", listing.text)
         if not found:
             raise RuntimeError(f"no {name} file listed at {dump_url}")
-        urls[name] = dump_url + os.path.basename(found.group(1))
+        urls[name] = dump_url + Path(found.group(1)).name
     return urls
 
 
 def download(url, download_dir):
-    """Fetch URL into download_dir, skipping a file that is already there"""
-    file_path = os.path.join(download_dir, os.path.basename(url))
-    if os.path.exists(file_path):
+    """Fetch URL into download_dir, skipping a file that is already there. Returns its path"""
+    file_path = Path(download_dir) / Path(url).name
+    if file_path.exists():
         logging.info(f"{file_path} is already downloaded")
         return file_path
     logging.info(f"Downloading {url}, this takes a while")
     with SESSION.get(url, stream=True, timeout=60) as response:
         response.raise_for_status()
-        with open(file_path, 'wb') as dump_file:
+        with file_path.open('wb') as dump_file:
             for chunk in response.iter_content(chunk_size=2**20):
                 dump_file.write(chunk)
     return file_path
 
 
-def served_release(release):
-    """The OrthoDB release currently served for this version."""
+def get_served_release(release):
+    """Fetch the OrthoDB release currently served for this version."""
     response = SESSION.get(RELEASE_URL.format(major=major_of(release)), timeout=60)
     response.raise_for_status()
     return response.text.strip().strip('"')
@@ -139,67 +145,87 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
-        "-o", "--output", type=str, default="orthodb.duckdb", help="""database to write when
-        [default: orthodb.duckdb]"""
+        "-i", "--input", type=Path, help="""Existing OrthoDB database to reuse when it already
+        matches the release OrthoDB API currently serves."""
     )
     parser.add_argument(
-        "--release", type=str, default="v12.2", help="""OrthoDB release to use. [default: v12.2]"""
+        "-o", "--output", type=Path, default="orthodb.duckdb",
+        help="Filename the database is built as [default: orthodb.duckdb]"
     )
     parser.add_argument(
-        "--og2genes", type=str, default=None, help="OG2genes file of the dump. Downloaded when not given"
+        "--release", type=str, required=True, help="""OrthoDB release requested, e.g. v12.2. Built
+        under the release OrthoDB currently serves instead when this one has fallen behind"""
     )
     parser.add_argument(
-        "--og_aa_fasta", type=str, default=None, help="og_aa_fasta file of the dump. Downloaded when not given"
+        "--db_dir", type=Path, default=".", help="""Directory to create the database in.
+        The database is built in the <release> subdirectory, reusing one already there"""
     )
     parser.add_argument(
-        "--download_dir", type=str, default=".", help="where missing dump files are downloaded to [default: .]"
+        "--og2genes", type=Path, help="OG2genes file of the dump. Downloaded when not given"
     )
     parser.add_argument(
-        "--threads", type=int, default=None, help="Cores the task was allocated."
+        "--og_aa_fasta", type=Path, help="og_aa_fasta file of the dump. Downloaded when not given"
     )
     parser.add_argument(
-        "--memory", type=str, default=None, help="""Memory the task was allocated, e.g. 28GB."""
+        "--download_dir", type=Path, default=".", help="where missing dump files are downloaded to [default: .]"
     )
     parser.add_argument(
-        "--db_dir", type=str, default=None, help="""Directory holding one database per OrthoDB
-        release. Used with --release, the database is built only when it is not there yet"""
+        "--threads", type=int, help="Cores the task was allocated"
+    )
+    parser.add_argument(
+        "--memory", type=str, help="Memory the task was allocated, e.g. 28GB"
     )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
-    served = served_release(args.release)
-    if args.release != served:
-        logging.warning(f"OrthoDB now serves {served}, this run uses {args.release}. "
-                        f"Set the release to {served} to move on")
+    #   OrthoDB only ever hosts the dump of the release it currently serves for a major version
+    #   (v12.2 under the v12 API), so a requested release that has fallen behind can't actually
+    #   be fetched: build under the served release instead, whatever was requested
+    release = get_served_release(args.release)
+    is_current = args.release == release
+    if not is_current:
+        logging.warning(f"OrthoDB now serves {release}, newer than the requested {args.release}. "
+                        f"Building {release} instead")
 
-    output = args.output
-    if args.db_dir:
-        output = os.path.join(args.db_dir, args.release, os.path.basename(args.output))
-        if os.path.exists(output):
-            logging.info(f"OrthoDB {args.release} is already built at {output}")
-            return # Do nothing, the database already exists
-        logging.info(f"OrthoDB {args.release} is not built at {output} yet")
-        os.makedirs(os.path.dirname(output), exist_ok=True)
+    #   --input is only reused when the requested release is still the one OrthoDB serves: a
+    #   release that has fallen behind means --input, if given, was necessarily built from data
+    #   OrthoDB API no longer processes, so it can't be trusted regardless of whether it exists
+    if args.input and is_current:
+        if args.input.exists():
+            logging.info(f"{args.input} already holds OrthoDB {release}, reusing it")
+            print(args.input.resolve())
+            return
+        logging.warning(f"{args.input} does not exist yet, building OrthoDB {release} instead")
+
+    canonical_db = args.db_dir / release / args.output.name
+
+    #   an earlier run may already have built the very release this one now needs
+    if canonical_db.exists():
+        logging.info(f"OrthoDB {release} is already built at {canonical_db}, reusing it")
+        print(canonical_db.resolve())
+        return
 
     og2genes_file, og_aa_fasta_file = args.og2genes, args.og_aa_fasta
     if not og2genes_file or not og_aa_fasta_file:
-        os.makedirs(args.download_dir, exist_ok=True)
-        urls = dump_urls(args.release)
+        args.download_dir.mkdir(parents=True, exist_ok=True)
+        urls = dump_urls(release)
         og2genes_file = og2genes_file or download(urls["og2genes"], args.download_dir)
         og_aa_fasta_file = og_aa_fasta_file or download(urls["og_aa_fasta"], args.download_dir)
 
     check_dump_files(og2genes_file, og_aa_fasta_file)
 
-    with connect(output, args.threads, args.memory) as con:
-        build_og2genes(con, og2genes_file)
-        build_proteins(con, og_aa_fasta_file)
-        con.execute("CREATE TABLE meta AS SELECT ? AS release", [args.release])
+    canonical_db.parent.mkdir(parents=True, exist_ok=True)
+    with connect(str(canonical_db), args.threads, args.memory) as con:
+        build_og2genes(con, str(og2genes_file))
+        build_proteins(con, str(og_aa_fasta_file))
+        con.execute("CREATE TABLE meta AS SELECT ? AS release", [release])
         n_pairs = con.execute("SELECT count(*) FROM og2genes").fetchone()[0]
         n_proteins = con.execute("SELECT count(*) FROM proteins").fetchone()[0]
 
-    logging.info(f"{output} holds OrthoDB {args.release}: "
-                 f"{n_pairs} OG to gene pairs and {n_proteins} proteins")
+    logging.info(f"OrthoDB {release}: built new database at {canonical_db}, "
+                f"{n_pairs} OG to gene pairs and {n_proteins} proteins")
+    print(canonical_db.resolve())
 
 
 if __name__ == "__main__":
