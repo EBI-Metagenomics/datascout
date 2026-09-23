@@ -15,22 +15,20 @@ process ORTHODB_GETDB {
       path(og_aa_fasta)
 
     output:
-      path("approved.duckdb"), emit: orthodb_db
+      path("*/orthodb.duckdb"), emit: new_db, optional: true
       path("versions.yml"), emit: versions
 
     script:
     def dump_args = og2genes && og_aa_fasta ? "--og2genes ${og2genes} --og_aa_fasta ${og_aa_fasta}" : ""
     def input_arg = orthodb_db ? "--input ${orthodb_db}" : ""
     """
-    approved_db=\$(orthodb_getdb.py \\
+    orthodb_getdb.py \\
         --release ${release} \\
+        --output orthodb.duckdb \\
         ${input_arg} \\
         ${dump_args} \\
         --threads ${task.cpus} \\
-        --memory ${(task.memory.toGiga() * 0.8) as int}GB)
-
-    #   symlinked instead of copying
-    ln -s "\${approved_db}" approved.duckdb
+        --memory ${(task.memory.toGiga() * 0.8) as int}GB
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
