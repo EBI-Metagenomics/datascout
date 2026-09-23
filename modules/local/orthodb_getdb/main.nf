@@ -22,17 +22,17 @@ process ORTHODB_GETDB {
     def dump_args = og2genes && og_aa_fasta ? "--og2genes ${og2genes} --og_aa_fasta ${og_aa_fasta}" : ""
     def input_arg = orthodb_db ? "--input ${orthodb_db}" : ""
     """
-    orthodb_getdb.py \\
+    db_path=\$(orthodb_getdb.py \\
         --release ${release} \\
         --output orthodb.duckdb \\
         ${input_arg} \\
         ${dump_args} \\
         --threads ${task.cpus} \\
-        --memory ${(task.memory.toGiga() * 0.8) as int}GB
+        --memory ${(task.memory.toGiga() * 0.8) as int}GB)
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        \$(build_orthodb_fasta.py --orthodb_db "\${approved_db}" --version 2>&1)
+        \$(build_orthodb_fasta.py --orthodb_db "\${db_path}" --version 2>&1)
         Python: \$(python --version 2>&1 | sed 's/Python //g')
     END_VERSIONS
     """
