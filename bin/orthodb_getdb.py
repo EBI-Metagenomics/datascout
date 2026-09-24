@@ -47,7 +47,8 @@ def connect(output, threads=None, memory=None):
 
 
 def major_of(release):
-    """The part of a release OrthoDB puts in the API URL, v12.2 to v12"""
+    """The part of a release OrthoDB puts in the API URL, v12.2 to v12. "current" (accepted by
+    --release as an alias for the latest OrthoDB release) passes through unchanged"""
     return release.split('.')[0]
 
 
@@ -153,8 +154,9 @@ def main():
         help="Filename the database is built as [default: orthodb.duckdb]"
     )
     parser.add_argument(
-        "--release", type=str, required=True, help="""OrthoDB release requested, e.g. v12.2. Built
-        under the release OrthoDB currently serves instead when this one has fallen behind"""
+        "--release", type=str, required=True, help="""OrthoDB release requested, e.g. v12.2, or
+        "current" for the latest OrthoDB release. Built under the release OrthoDB
+        currently serves instead when a specific one requested has fallen behind"""
     )
     parser.add_argument(
         "--db_dir", type=Path, default=".", help="""Directory to create the database in.
@@ -183,7 +185,8 @@ def main():
     #   (v12.2 under the v12 API), so a requested release that has fallen behind can't actually
     #   be fetched: build under the served release instead, whatever was requested
     release = get_served_release(args.release)
-    is_current = args.release == release
+    #   "current" always resolves to whatever was just fetched, so it's never "fallen behind"
+    is_current = args.release == release or args.release == "current"
     if not is_current:
         logging.warning(f"OrthoDB now serves {release}, newer than the requested {args.release}. "
                         f"Building {release} instead")
