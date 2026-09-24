@@ -12,9 +12,6 @@ nextflow_process {
     test("Should build a database for the release the run uses") {
 
         when {
-            params {
-                orthodb_db_dir = "${outputDir}/orthodb_db"
-            }
             process {
                 """
                 input[0] = "v12.2"
@@ -39,9 +36,6 @@ nextflow_process {
     test("Should build a fresh database and report the new version when the requested release has fallen behind") {
 
         when {
-            params {
-                orthodb_db_dir = "${outputDir}/orthodb_db"
-            }
             process {
                 """
                 input[0] = "v12.1"
