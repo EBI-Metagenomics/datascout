@@ -187,6 +187,7 @@ def main():
     if not is_current:
         logging.warning(f"OrthoDB now serves {release}, newer than the requested {args.release}. "
                         f"Building {release} instead")
+        Path("new_version.txt").write_text(release)
 
     #   --input is only reused when the requested release is still the one OrthoDB serves: a
     #   release that has fallen behind means --input, if given, was necessarily built from data

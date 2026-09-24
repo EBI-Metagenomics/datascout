@@ -69,19 +69,22 @@ workflow DATASCOUT {
         taxa_ch.join(input.rfam_tax).set { joined_rfam }
 
         // query databases for supporting proteins and rnas
-        orthodb_db = params.orthodb_db_dir ? file("${params.orthodb_db_dir}/${params.orthodb_version}/orthodb.duckdb", checkIfExists: true) : []
+        input_orthodb_db = params.orthodb_db_dir ? file("${params.orthodb_db_dir}/${params.orthodb_version}/orthodb.duckdb", checkIfExists: true) : []
 
+        // check if user supplied OrthoDB version is the one OrthoDB API currently serves
+        // if not - DB is rebuild using newer version
         ORTHODB_GETDB(
             params.orthodb_version,
-            orthodb_db,
+            input_orthodb_db,
             params.orthodb_og2genes    ? file(params.orthodb_og2genes,    checkIfExists: true) : [],
             params.orthodb_og_aa_fasta ? file(params.orthodb_og_aa_fasta, checkIfExists: true) : []
         )
-        ch_orthodb_db = ORTHODB_GETDB.out.new_db.ifEmpty(orthodb_db)
+        approved_orthodb_db = ORTHODB_GETDB.out.new_db.ifEmpty(input_orthodb_db)
+        approved_orthodb_version = ORTHODB_GETDB.out.new_version.map { version_file -> version_file.text.trim() }.ifEmpty(params.orthodb_version)
         ch_versions = ch_versions.mix(ORTHODB_GETDB.out.versions)
 
         // resolve which OrthoDB taxon each genome maps to, and list that taxon's clusters
-        RESOLVE_ORTHODB_TAXON(joined_orthodb, params.max_orthodb_clusters, params.orthodb_version)
+        RESOLVE_ORTHODB_TAXON(joined_orthodb, params.max_orthodb_clusters, approved_orthodb_version)
         ch_versions = ch_versions.mix(RESOLVE_ORTHODB_TAXON.out.versions.first())
 
         // trace genomes for which no OrthoDB taxon could be resolved at any lineage rank
@@ -104,7 +107,7 @@ workflow DATASCOUT {
             .unique { taxid, _clusters_file -> taxid }
             .set { unique_taxon_clusters }
 
-        BUILD_ORTHODB_FASTA(unique_taxon_clusters, ch_orthodb_db.first(), params.orthodb_min_proteins)
+        BUILD_ORTHODB_FASTA(unique_taxon_clusters, approved_orthodb_db.first(), params.orthodb_min_proteins)
         ch_versions = ch_versions.mix(BUILD_ORTHODB_FASTA.out.versions.first())
 
         // fan the per-taxon FASTA back out to every genome that resolved to it

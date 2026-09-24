@@ -16,6 +16,7 @@ process ORTHODB_GETDB {
 
     output:
       path("*/orthodb.duckdb"), emit: new_db, optional: true
+      path("new_version.txt"), emit: new_version, optional: true
       path("versions.yml"), emit: versions
 
     script:
