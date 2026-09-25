@@ -1,0 +1,99 @@
+nextflow_process {
+
+    name "Test Process ORTHODB_GETDB"
+    script "modules/local/orthodb_getdb/main.nf"
+    process "ORTHODB_GETDB"
+    tag "module"
+    tag "orthodb_getdb"
+    tag "ci"
+
+    //   built from a miniature dump rather than the real 39 GB one, which still exercises the
+    //   fifo the fasta is read through and the release the database is kept under
+    test("Should build a database for the release the run uses") {
+
+        when {
+            process {
+                """
+                input[0] = "v12.2"
+                input[1] = []
+                input[2] = "\$projectDir/tests/reference_databases/odb12v2_OG2genes.tab.gz"
+                input[3] = "\$projectDir/tests/reference_databases/odb12v2_og_aa_fasta.gz"
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            def db = process.out.new_db.get(0)
+            assert db ==~ /.*\/v12\.\d+\/orthodb\.duckdb/
+            assert file(db).exists()
+            process.out.new_version == []
+            assert file(process.out.versions.get(0)).text.contains("OrthoDB: v12.")
+        }
+
+    }
+
+    test("Should build a fresh database and report the new version when the requested release has fallen behind") {
+
+        when {
+            process {
+                """
+                input[0] = "v12.1"
+                input[1] = []
+                input[2] = "\$projectDir/tests/reference_databases/odb12v2_OG2genes.tab.gz"
+                input[3] = "\$projectDir/tests/reference_databases/odb12v2_og_aa_fasta.gz"
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            def db = process.out.new_db.get(0)
+            assert db ==~ /.*\/v12\.\d+\/orthodb\.duckdb/
+            assert file(db).exists()
+            assert process.out.new_version.size() == 1
+            def new_version = file(process.out.new_version.get(0)).text
+            assert new_version ==~ /v12\.\d+/
+            assert new_version != "v12.1"
+            assert file(process.out.versions.get(0)).text.contains("OrthoDB: v12.")
+        }
+
+    }
+
+    test("Should reuse an --input database that already matches the served release, and build nothing") {
+
+        setup {
+            run("ORTHODB_GETDB", alias: "BUILD_FIRST") {
+                script "modules/local/orthodb_getdb/main.nf"
+                process {
+                    """
+                    input[0] = "v12.2"
+                    input[1] = []
+                    input[2] = "\$projectDir/tests/reference_databases/odb12v2_OG2genes.tab.gz"
+                    input[3] = "\$projectDir/tests/reference_databases/odb12v2_og_aa_fasta.gz"
+                    """
+                }
+            }
+        }
+
+        when {
+            process {
+                """
+                input[0] = "v12.2"
+                input[1] = BUILD_FIRST.out.new_db
+                input[2] = []
+                input[3] = []
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.new_db == []
+            assert process.out.new_version == []
+            assert file(process.out.versions.get(0)).text.contains("OrthoDB: v12.")
+        }
+
+    }
+
+}

@@ -18,7 +18,10 @@ include { samplesheetToList } from 'plugin/nf-schema'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 include { TAX_LINEAGE                } from '../modules/local/parse_tax_lineage/main.nf'
-include { NCBI_ORTHODB               } from '../modules/local/ncbi_orthodb/main.nf'
+include { ORTHODB_GETDB              } from '../modules/local/orthodb_getdb/main.nf'
+include { RESOLVE_ORTHODB_TAXON      } from '../modules/local/resolve_orthodb_taxon/main.nf'
+include { BUILD_ORTHODB_FASTA        } from '../modules/local/build_orthodb_fasta/main.nf'
+include { ASSIGN_ORTHODB_FASTA       } from '../modules/local/assign_orthodb_fasta/main.nf'
 include { GENOME_ASSEMBLY            } from '../modules/local/genome_assembly/main.nf'
 include { UNIPROT_DATA               } from '../modules/local/uniprot_data/main.nf'
 include { RFAM_ACCESSIONS            } from '../modules/local/rfam_accessions/main.nf'
@@ -66,20 +69,70 @@ workflow DATASCOUT {
         taxa_ch.join(input.rfam_tax).set { joined_rfam }
 
         // query databases for supporting proteins and rnas
-        NCBI_ORTHODB(joined_orthodb, params.max_orthodb_clusters, params.orthodb_min_proteins)
-        ch_versions = ch_versions.mix(NCBI_ORTHODB.out.versions.first())
+        input_orthodb_db = params.orthodb_db_dir ? file("${params.orthodb_db_dir}/${params.orthodb_version}/orthodb.duckdb", checkIfExists: true) : []
 
-        UNIPROT_DATA(joined_uniprot, params.swissprot ?: false)
-        ch_versions = ch_versions.mix(UNIPROT_DATA.out.versions.first())
+        // check if user supplied OrthoDB version is the one OrthoDB API currently serves
+        // if not - DB is rebuild using newer version
+        ORTHODB_GETDB(
+            params.orthodb_version,
+            input_orthodb_db,
+            params.orthodb_og2genes    ? file(params.orthodb_og2genes,    checkIfExists: true) : [],
+            params.orthodb_og_aa_fasta ? file(params.orthodb_og_aa_fasta, checkIfExists: true) : []
+        )
+        approved_orthodb_db = ORTHODB_GETDB.out.new_db.ifEmpty(input_orthodb_db)
+        approved_orthodb_version = ORTHODB_GETDB.out.new_version.map { version_file -> version_file.text.trim() }.ifEmpty(params.orthodb_version)
+        ch_versions = ch_versions.mix(ORTHODB_GETDB.out.versions)
 
-        // trace of genomes dropped for having too few OrthoDB proteins
-        NCBI_ORTHODB.out.low_proteins
+        // resolve which OrthoDB taxon each genome maps to, and list that taxon's clusters
+        RESOLVE_ORTHODB_TAXON(joined_orthodb, params.max_orthodb_clusters, approved_orthodb_version)
+        ch_versions = ch_versions.mix(RESOLVE_ORTHODB_TAXON.out.versions.first())
+
+        // trace genomes for which no OrthoDB taxon could be resolved at any lineage rank
+        RESOLVE_ORTHODB_TAXON.out.no_taxon
+            .collectFile(
+                name: 'no_orthodb_taxon.csv',
+                seed: 'sample_id\n',
+                sort: true,
+                storeDir: "${params.outdir}"
+            )
+
+        // pull out the resolved taxid (text content of the *_taxon.txt file)
+        RESOLVE_ORTHODB_TAXON.out.taxon_clusters
+            .map { meta, taxon_file, clusters_file -> tuple(meta, taxon_file.text.trim(), clusters_file) }
+            .set { resolved_taxon_clusters }
+
+        // dedupe: build each unique taxon's FASTA once, no matter how many genomes share it
+        resolved_taxon_clusters
+            .map { _meta, taxid, clusters_file -> tuple(taxid, clusters_file) }
+            .unique { taxid, _clusters_file -> taxid }
+            .set { unique_taxon_clusters }
+
+        BUILD_ORTHODB_FASTA(unique_taxon_clusters, approved_orthodb_db.first(), params.orthodb_min_proteins)
+        ch_versions = ch_versions.mix(BUILD_ORTHODB_FASTA.out.versions.first())
+
+        // fan the per-taxon FASTA back out to every genome that resolved to it
+        resolved_taxon_clusters
+            .map { meta, taxid, _clusters_file -> tuple(taxid, meta) }
+            .combine(BUILD_ORTHODB_FASTA.out.fasta, by: 0)
+            .map { taxid, meta, fasta -> tuple(meta, taxid, fasta) }
+            .set { genome_fasta_ch }
+
+        ASSIGN_ORTHODB_FASTA(genome_fasta_ch)
+
+        // trace every genome whose resolved taxon held too few proteins to be published
+        resolved_taxon_clusters
+            .map { meta, taxid, _clusters_file -> tuple(taxid, meta) }
+            .combine(BUILD_ORTHODB_FASTA.out.low_proteins, by: 0)
+            .map { _taxid, meta, low_proteins -> "${meta.id},${low_proteins.text.trim()}\n" }
             .collectFile(
                 name: 'low_protein_genomes.csv',
                 seed: 'sample_id,taxid,n_proteins\n',
                 sort: true,
                 storeDir: "${params.outdir}"
             )
+
+        UNIPROT_DATA(joined_uniprot, params.swissprot ?: false)
+        ch_versions = ch_versions.mix(UNIPROT_DATA.out.versions.first())
 
         if ( !params.skip_rfam ) {
             RFAM_ACCESSIONS(joined_rfam, params.rfam_db)

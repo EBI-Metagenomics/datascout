@@ -55,6 +55,35 @@
           "help_text": "Path to NCBI sqlite database used for taxonomic lineage parsing",
           "fa_icon": "fas fa-folder"
         },
+        "orthodb_db_dir": {
+          "type": "string",
+          "format": "directory-path",
+          "description": "Where the OrthoDB databases are kept",
+          "help_text": "Path where the OrthoDB databases are kept, one directory per OrthoDB release. The database of the release the run is pinned to is reused when it is already there, and built when it is not, so point this at a shared location to build each release once.",
+          "fa_icon": "fas fa-folder",
+          "default": "orthodb_db"
+        },
+        "orthodb_version": {
+          "type": "string",
+          "description": "OrthoDB release the run uses",
+          "help_text": "OrthoDB release the run uses, for example v12.2, as reported by https://data.orthodb.org/v12/orthodb_release_id. It names the directory its database is kept in, and its major version is what the API accepts in a path. Running with a release older than the one OrthoDB now serves is fine, it is only warned about.",
+          "fa_icon": "fas fa-tag",
+          "default": "v12.2"
+        },
+        "orthodb_og2genes": {
+          "type": "string",
+          "format": "file-path",
+          "description": "Path to the OG2genes file of an OrthoDB data dump already on disk",
+          "help_text": "Given together with the other dump file, ORTHODB_GETDB builds from them instead of downloading them from https://data.orthodb.org/v12/download/odb_data_dump/.",
+          "fa_icon": "fas fa-file-archive"
+        },
+        "orthodb_og_aa_fasta": {
+          "type": "string",
+          "format": "file-path",
+          "description": "Path to the og_aa_fasta file of an OrthoDB data dump already on disk",
+          "help_text": "Given together with the other dump file, ORTHODB_GETDB builds from them instead of downloading them from https://data.orthodb.org/v12/download/odb_data_dump/.",
+          "fa_icon": "fas fa-file-archive"
+        },
         "rfam_db": {
           "type": "string",
           "format": "file-path",

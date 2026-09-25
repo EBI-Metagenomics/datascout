@@ -1,0 +1,9 @@
+channels:
+- conda-forge
+- bioconda
+dependencies:
+- conda-forge::python=3.13.1
+- pip
+- pip:
+  - duckdb==1.5.5
+  - requests==2.32.3

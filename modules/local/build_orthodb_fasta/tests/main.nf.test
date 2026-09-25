@@ -1,0 +1,78 @@
+nextflow_process {
+
+    name "Test Process BUILD_ORTHODB_FASTA"
+    script "modules/local/build_orthodb_fasta/main.nf"
+    process "BUILD_ORTHODB_FASTA"
+    tag "module"
+    tag "build_orthodb_fasta"
+    tag "ci"
+
+    test("Should write the combined FASTA of the taxon from the local OrthoDB database") {
+
+        when {
+            process {
+                """
+                input[0] = tuple("5204", file("\$projectDir/tests/reference_databases/mock_orthodb_clusters.tsv"))
+                input[1] = "\$projectDir/tests/reference_databases/mock_orthodb.duckdb"
+                input[2] = 0
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.fasta.get(0).get(0) == "5204"
+            def fasta = file(process.out.fasta.get(0).get(1))
+            assert fasta.name == "combined_orthodb_5204.faa"
+            //   the three genes of the two clusters in the mock cluster list, and nothing else
+            assert fasta.text.count(">") == 3
+            assert fasta.text.contains(">4972_0:001393\nMKVLASTIG")
+            assert !fasta.text.contains("5691_0:000001")
+            assert process.out.low_proteins.size() == 0
+        }
+
+    }
+
+    test("Should drop the taxon and trace it when it holds fewer proteins than the minimum") {
+
+        when {
+            process {
+                """
+                input[0] = tuple("5204", file("\$projectDir/tests/reference_databases/mock_orthodb_clusters.tsv"))
+                input[1] = "\$projectDir/tests/reference_databases/mock_orthodb.duckdb"
+                input[2] = 4
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            //   no fasta is published, so every genome resolving to this taxon is left without one
+            assert process.out.fasta.size() == 0
+            assert process.out.low_proteins.get(0).get(0) == "5204"
+            assert file(process.out.low_proteins.get(0).get(1)).text.trim() == "5204,3"
+        }
+
+    }
+
+    test("Should report the OrthoDB release recorded in the database") {
+
+        when {
+            process {
+                """
+                input[0] = tuple("5204", file("\$projectDir/tests/reference_databases/mock_orthodb_clusters.tsv"))
+                input[1] = "\$projectDir/tests/reference_databases/mock_orthodb.duckdb"
+                input[2] = 0
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            //   the version comes from the database, never from the OrthoDB API
+            assert file(process.out.versions.get(0)).text.contains("OrthoDB: v12.2")
+        }
+
+    }
+
+}
