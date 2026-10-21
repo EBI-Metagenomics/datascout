@@ -62,11 +62,11 @@ with different members, and some ids disappear. If the database is from a differ
 API, the cluster ids still look valid, but their lookup can quietly return the wrong proteins or
 none at all, and nothing fails.
 
-**How.** Before any cluster is queried, pipeline checks which release OrthoDB currently
-serves (`https://data.orthodb.org/<major>/orthodb_release_id`). If it matches
-`--orthodb_version`, the database at `<orthodb_db_dir>/<orthodb_version>/orthodb.duckdb` is reused;
-otherwise a new database is built from the served release, with a warning, and that release is
-passed downstream so the API queries and the database stay on the same release.
+**How.** Before running the pipeline, choose which OrthoDB release to use. See https://data.orthodb.org/current/orthodb_release_id for the latest release. If you want to use a particular major version (e.g. v12 or v11), check which release OrthoDB currently serves for it (`https://data.orthodb.org/<version>/orthodb_release_id`).
+
+If you already have the required OrthoDB database built locally, provide it with `--orthodb_db` and its release with `--orthodb_version`. Before any cluster is queried, the pipeline checks the provided parameters against the OrthoDB API. If `--orthodb_version` is not the served release, or the database given with `--orthodb_db` records an older release than the served one, the pipeline fails.
+
+To build the database during the pipeline run, leave `--orthodb_db` unset and set `--orthodb_version` to the served release (or `current`).
 
 See [Building the OrthoDB database](#building-the-orthodb-database) for where databases are kept and
 how to build one ahead of a run.
@@ -115,14 +115,14 @@ Filter only runs which contribute >= 1% unique kmers mapped to the genome in the
 Typical pipeline commands:
 <!-- TODO: check this commands -->
 ```
-#   run datascout reusing orthodb_db/v12.2/orthodb.duckdb as-is if the version v12.2 is still served by OrthoDB API, otherwise build newer version
-nexflow run main.nf --outdir results/ --samplesheet input.csv --orthodb_db_dir orthodb_db/ --orthodb_version v12.2
+#   run datascout reusing orthodb_db/v12.2/orthodb.duckdb, fails if v12.2 is no longer served by OrthoDB API
+nexflow run main.nf --outdir results/ --samplesheet input.csv --orthodb_db orthodb_db/v12.2/orthodb.duckdb --orthodb_version v12.2
 
-#   run datascout and build the v12.2 of the OrthoDB database to use
-nexflow run main.nf --outdir results/ --samplesheet input.csv --orthodb_db_dir orthodb_db/ --orthodb_version v12.2 --download_rna_fastq false --skip_rfam
+#   run datascout and build the v12.2 OrthoDB database to use, fails if v12.2 is no longer served by OrthoDB API
+nexflow run main.nf --outdir results/ --samplesheet input.csv --orthodb_version v12.2
 
-#   run datascout, build the v12.2 of the OrthoDB database, skip Rfam calling and download of transcriptomic read runs
-nexflow run main.nf --outdir results/ --samplesheet input.csv --orthodb_db_dir orthodb_db/ --orthodb_version v12.2 --download_rna_fastq false --skip_rfam
+#   run datascout, build the OrthoDB database of the latest release, skip Rfam calling and download of transcriptomic read runs
+nexflow run main.nf --outdir results/ --samplesheet input.csv --orthodb_version current --download_rna_fastq false --skip_rfam
 ```
 
 Pipeline help:
@@ -146,12 +146,13 @@ DATABASE OPTIONS:
   --sqlite <dir>          Path to NCBI sqlite database. Will be downloaded if not provided.
                           Used for taxonomic lineage parsing.
                           <!-- TODO: make sure this is updated -->
-  --orthodb_db_dir <dir>  Path where the database this run needs is looked for, at exactly
-                          <orthodb_db_dir>/<orthodb_version>/orthodb.duckdb, and reused as-is
-                          when it already holds the release OrthoDB currently serves. Unset by
-                          default, so every run builds its own OrthoDB database.
-  --orthodb_version <str> OrthoDB release of the input OrthoDB or OrthoDB to generate, for example v12.2.
-                          [default: v12.2]
+  --orthodb_db <file>     Full path to an existing OrthoDB database (orthodb.duckdb), reused
+                          as-is when it holds the release OrthoDB currently serves; the run
+                          fails when it's older. Unset by default, so every run builds its
+                          own OrthoDB database.
+  --orthodb_version <str> OrthoDB release of the input OrthoDB or OrthoDB to generate, for example
+                          v12.2, or current for the latest release. The run fails when it isn't
+                          the release OrthoDB currently serves. [default: v12.2]
   --orthodb_og2genes <file>, --orthodb_og_aa_fasta <file>
                           Dump files already on disk. Given together, ORTHODB_GETDB builds from
                           them instead of downloading them from
@@ -196,19 +197,23 @@ sequences. This DuckDB database is generated by ORTHODB_GETDB module.
 The database holds three tables: `og2genes` maps orthologous groups to gene ids, `proteins` holds
 one sequence per gene id, and `meta` records the OrthoDB release it was built from, `v12.2`.
 
-If `--orthodb_db_dir` and `--orthodb_version` are provided, pipeline run checks for a candidate database at exactly `<orthodb_db_dir>/<orthodb_version>/orthodb.duckdb`. When the file there already holds the release OrthoDB currently serves, it's reused as-is; otherwise (that release has moved on, or nothing is there yet) a fresh database is
-built during the pipeline run and used to collect protein evidence. The database is also build when `--orthodb_db_dir` is not set. Building one downloads both
+If `--orthodb_db` is provided, the release recorded in that database's `meta` table is checked:
+it's reused as-is when it is the release OrthoDB currently serves, and the run fails otherwise.
+When `--orthodb_db` is not set, a fresh database of `--orthodb_version` is built during the
+pipeline run and used to collect protein evidence. Building one downloads both
 dump files fresh unless `--orthodb_og2genes`/`--orthodb_og_aa_fasta` are given, about 39 GB, so a
 run that needs to build can take a while.
 
-A freshly built database by default is copied to the output folder by default. It is also recommended to set
-ORTHODB_GETDB's `publishDir` to `params.orthodb_db_dir` to make sure all versions of OrthoDB are stored in one place and ready for reuse:
+A freshly built database is copied to `<outdir>/orthodb_db/<release>/orthodb.duckdb` by default.
+It is recommended to point ORTHODB_GETDB's `publishDir` at a shared reference databases folder, so
+all versions of OrthoDB are stored in one place and ready to be passed with `--orthodb_db` in
+later runs:
 
 ```
 process {
       withName: ORTHODB_GETDB {
         publishDir = [
-            path: params.orthodb_db_dir,
+            path: "/path/to/ref-dbs/orthodb",
             mode: 'copy',
             pattern: "*/orthodb.duckdb"
         ]
@@ -219,7 +224,7 @@ process {
 To build or validate the database yourself, rather than inside a pipeline run:
 
 ```bash
-#   reuse orthodb_db/v12.2/orthodb.duckdb as-is if the version v12.2 is still served by OrthoDB API, otherwise build newer version
+#   check orthodb_db/v12.2/orthodb.duckdb still holds the release served by OrthoDB API, fails otherwise
 python3 bin/orthodb_getdb.py --release v12.2 --db_dir orthodb_db --input orthodb_db/v12.2/orthodb.duckdb
 
 #   download both dump files and build the database fresh, about 39 GB of downloads
