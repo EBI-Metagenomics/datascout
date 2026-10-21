@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
-"""Get the OrthoDB duckdb database the pipeline reads protein sequences from, building it if needed.
+"""Check the OrthoDB duckdb database the pipeline reads protein sequences from, building it
+if asked to.
 
-Given --input, that database is reused as-is when the requested release is still the one OrthoDB
-currently serves; otherwise, or when --input isn't given, a database is built under
---db_dir/<release> (reusing one already there for that release rather than rebuilding it).
+The requested --release has to be the one OrthoDB currently serves (or "current"), otherwise
+the script exists with error. Given --input, that database is checked to hold the served release,
+failing when it's older.
+Without --input, a database is built under --db_dir/<release>
+(reusing one already there for that release rather than rebuilding it).
 
 Building turns the OrthoDB data dump into a database BUILD_ORTHODB_FASTA can query, instead of
 downloading one cluster at a time from the OrthoDB API. Only two files of the dump are needed,
@@ -88,6 +91,15 @@ def get_served_release(release):
     return response.text.strip().strip('"')
 
 
+def db_release(orthodb_db):
+    """The release recorded in a database's meta table, None when it has none"""
+    with duckdb.connect(str(orthodb_db), read_only=True) as con:
+        try:
+            return con.execute("SELECT release FROM meta").fetchone()[0]
+        except duckdb.CatalogException:
+            return None
+
+
 def check_dump_files(og2genes_file, og_aa_fasta_file):
     """Fail before the long load when a file is missing, or when the two were swapped: the
     OG2genes dump is two tab separated columns starting with an OG id, the fasta starts with >"""
@@ -146,8 +158,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
-        "-i", "--input", type=Path, help="""Existing OrthoDB database to reuse when it already
-        matches the release OrthoDB API currently serves."""
+        "-i", "--input", type=Path, help="""Existing OrthoDB database to reuse. Fails unless it
+        holds the release OrthoDB API currently serves"""
     )
     parser.add_argument(
         "-o", "--output", type=Path, default="orthodb.duckdb",
@@ -155,8 +167,8 @@ def main():
     )
     parser.add_argument(
         "--release", type=str, required=True, help="""OrthoDB release requested, e.g. v12.2, or
-        "current" for the latest OrthoDB release. Built under the release OrthoDB
-        currently serves instead when a specific one requested has fallen behind"""
+        "current" for the latest OrthoDB release. Fails when it isn't the release OrthoDB
+        currently serves"""
     )
     parser.add_argument(
         "--db_dir", type=Path, default=".", help="""Directory to create the database in.
@@ -182,25 +194,29 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
     #   OrthoDB only ever hosts the dump of the release it currently serves for a major version
-    #   (v12.2 under the v12 API), so a requested release that has fallen behind can't actually
-    #   be fetched: build under the served release instead, whatever was requested
+    #   (v12.2 under the v12 API), and the API answers cluster queries for that release only, so
+    #   a requested release that has fallen behind can't be used together with the API
     release = get_served_release(args.release)
     #   "current" always resolves to whatever was just fetched, so it's never "fallen behind"
-    is_current = args.release == release or args.release == "current"
-    if not is_current:
-        logging.warning(f"OrthoDB now serves {release}, newer than the requested {args.release}. "
-                        f"Building {release} instead")
-        Path("new_version.txt").write_text(release)
+    if args.release not in (release, "current"):
+        rerun = (f"rerun with --orthodb_version {release} (or current) and with --orthodb_db "
+                 f"pointing to an OrthoDB {release} database, or unset to build one"
+                 if args.input else f"rerun with --orthodb_version {release} (or current)")
+        raise SystemExit(f"OrthoDB API now serves {release}, the requested {args.release} is "
+                         f"obsolete: {rerun}")
 
-    #   --input is only reused when the requested release is still the one OrthoDB serves: a
-    #   release that has fallen behind means --input, if given, was necessarily built from data
-    #   OrthoDB API no longer processes, so it can't be trusted regardless of whether it exists
-    if args.input and is_current:
-        if args.input.exists():
-            logging.info(f"{args.input} already holds OrthoDB {release}, reusing it")
-            print(args.input.resolve())
-            return
-        logging.warning(f"{args.input} does not exist yet, building OrthoDB {release} instead")
+    if args.input:
+        if not args.input.exists():
+            raise SystemExit(f"{args.input} does not exist: point --orthodb_db to an existing "
+                             f"database, or unset it to build OrthoDB {release}")
+        input_release = db_release(args.input)
+        if input_release != release:
+            raise SystemExit(f"{args.input} holds OrthoDB {input_release or 'of unknown release'}, "
+                             f"but OrthoDB API serves {release}: rerun with --orthodb_version "
+                             f"{release} (or current) and --orthodb_db unset to build it")
+        logging.info(f"{args.input} holds OrthoDB {release}, reusing it")
+        print(args.input.resolve())
+        return
 
     canonical_db = args.db_dir / release / args.output.name
 

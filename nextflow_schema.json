@@ -55,17 +55,17 @@
           "help_text": "Path to NCBI sqlite database used for taxonomic lineage parsing",
           "fa_icon": "fas fa-folder"
         },
-        "orthodb_db_dir": {
+        "orthodb_db": {
           "type": "string",
-          "format": "directory-path",
-          "description": "Folder where the OrthoDB release for this run is looked for",
-          "help_text": "Path where the OrthoDB release this run needs is looked for, at exactly <orthodb_db_dir>/<orthodb_version>/orthodb.duckdb, and reused as-is when it already holds the release OrthoDB currently serves. Unset by default, so every run builds its own OrthoDB database. See README for more details.",
+          "format": "file-path",
+          "description": "Full path to an existing OrthoDB database file (orthodb.duckdb) to reuse",
+          "help_text": "Full path to an existing OrthoDB database file, reused as-is when it holds --orthodb_version and that is the release OrthoDB currently serves. The pipeline fails when the database is older: unset --orthodb_db to build a fresh one instead. Unset by default, so every run builds its own OrthoDB database. See README for more details.",
           "fa_icon": "fas fa-folder"
         },
         "orthodb_version": {
           "type": "string",
           "description": "OrthoDB release of the input OrthoDB or OrthoDB to generate, for example v12.2",
-          "help_text": "OrthoDB release of the input OrthoDB or OrthoDB to generate, for example v12.2. Requesting a release older than the one currently served by the OrthoDB API triggers building a fresh database for whatever release OrthoDB actually serves instead. See README for more details.",
+          "help_text": "OrthoDB release of the input OrthoDB or OrthoDB to generate, for example v12.2, or current for the latest release. It has to be the release currently served by the OrthoDB API, the pipeline fails otherwise. See README for more details.",
           "fa_icon": "fas fa-tag",
           "default": "v12.2"
         },

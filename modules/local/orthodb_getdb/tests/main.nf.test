@@ -27,13 +27,12 @@ nextflow_process {
             def db = process.out.new_db.get(0)
             assert db ==~ /.*\/v12\.\d+\/orthodb\.duckdb/
             assert file(db).exists()
-            process.out.new_version == []
             assert file(process.out.versions.get(0)).text.contains("OrthoDB: v12.")
         }
 
     }
 
-    test("Should build a fresh database and report the new version when the requested release has fallen behind") {
+    test("Should fail when the requested release has fallen behind") {
 
         when {
             process {
@@ -47,15 +46,8 @@ nextflow_process {
         }
 
         then {
-            assert process.success
-            def db = process.out.new_db.get(0)
-            assert db ==~ /.*\/v12\.\d+\/orthodb\.duckdb/
-            assert file(db).exists()
-            assert process.out.new_version.size() == 1
-            def new_version = file(process.out.new_version.get(0)).text
-            assert new_version ==~ /v12\.\d+/
-            assert new_version != "v12.1"
-            assert file(process.out.versions.get(0)).text.contains("OrthoDB: v12.")
+            assert process.failed
+            assert process.stdout.any { it.contains("the requested v12.1 is obsolete") }
         }
 
     }
@@ -90,7 +82,6 @@ nextflow_process {
         then {
             assert process.success
             assert process.out.new_db == []
-            assert process.out.new_version == []
             assert file(process.out.versions.get(0)).text.contains("OrthoDB: v12.")
         }
 
