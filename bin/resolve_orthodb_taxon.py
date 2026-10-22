@@ -204,7 +204,7 @@ def main():
             version_response = requests.get(RELEASE_URL.format(major=major_of(args.release)),
                                             timeout=REQUEST_TIMEOUT)
             version_response.raise_for_status()
-            version = version_response.text.strip('"')
+            version = version_response.text.strip().strip('"')
         except requests.exceptions.RequestException as e:
             print(f"OrthoDB: unknown (failed to fetch version: {e})")
             return
