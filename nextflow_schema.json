@@ -55,6 +55,34 @@
           "help_text": "Path to NCBI sqlite database used for taxonomic lineage parsing",
           "fa_icon": "fas fa-folder"
         },
+        "orthodb_db": {
+          "type": "string",
+          "format": "file-path",
+          "description": "Full path to an existing OrthoDB database file (orthodb.duckdb) to reuse",
+          "help_text": "Full path to an existing OrthoDB database file, reused as-is when it holds --orthodb_version and that is the release OrthoDB currently serves. The pipeline fails when the database is older: unset --orthodb_db to build a fresh one instead. Unset by default, so every run builds its own OrthoDB database. See README for more details.",
+          "fa_icon": "fas fa-folder"
+        },
+        "orthodb_version": {
+          "type": "string",
+          "description": "OrthoDB release of the input OrthoDB or OrthoDB to generate, for example v12.2",
+          "help_text": "OrthoDB release of the input OrthoDB or OrthoDB to generate, for example v12.2, or current for the latest release. It has to be the release currently served by the OrthoDB API, the pipeline fails otherwise. See README for more details.",
+          "fa_icon": "fas fa-tag",
+          "default": "v12.2"
+        },
+        "orthodb_og2genes": {
+          "type": "string",
+          "format": "file-path",
+          "description": "Path to the OG2genes file of an OrthoDB data dump already on disk",
+          "help_text": "Given together with the other dump file, ORTHODB_GETDB builds from them instead of downloading them from https://data.orthodb.org/<version>/download/odb_data_dump/. Left unset, building a database downloads both files fresh, about 39 GB, which can take a while.",
+          "fa_icon": "fas fa-file-archive"
+        },
+        "orthodb_og_aa_fasta": {
+          "type": "string",
+          "format": "file-path",
+          "description": "Path to the og_aa_fasta file of an OrthoDB data dump already on disk",
+          "help_text": "Given together with the other dump file, ORTHODB_GETDB builds from them instead of downloading them from https://data.orthodb.org/<version>/download/odb_data_dump/. Left unset, building a database downloads both files fresh, about 39 GB, which can take a while.",
+          "fa_icon": "fas fa-file-archive"
+        },
         "rfam_db": {
           "type": "string",
           "format": "file-path",

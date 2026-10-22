@@ -18,18 +18,58 @@ The datascout pipeline is split into the following steps:
 
 ## Step 1. Construct taxonomic lineage
 
-Uses NCBI taxdump to construct taxonomic lineages using [ete toolkit](https://github.com/etetoolkit/ete), ignoring any ranks labelled as "no rank"
+Uses NCBI taxdump to construct taxonomic lineages using [ete toolkit](https://github.com/etetoolkit/ete), ignoring any ranks labelled as "no rank".
 
 ## Step 2. OrthoDB
 
-Query OrthoDB for clusters matching the most specific possible taxid OR the given rank in the samplesheet.
-Creates a combined protein fasta file for a cluster.
+Collects orthologous protein sequences from [OrthoDB](https://www.orthodb.org) for each genome. The cluster ids
+come from the OrthoDB API, but the sequences themselves are read from a
+[local OrthoDB database](#building-the-orthodb-database), which is much faster than downloading
+clusters one by one from the API. The step runs in two parts:
 
-Uses the following filters:
-"universal": "0.9",
-"singlecopy": "0.9"
+1. **Query the OrthoDB API** (once per input genome). The pipeline goes through the
+   genome's taxonomic lineage from Step 1, starting with the most specific rank. At each rank it
+   searches OrthoDB API for orthologous groups at that taxid, with the following filters:
+   - `universal: 0.9`: the group has to be present in at least 90% of the species under that taxon
+   - `singlecopy: 0.9`: the group has to be single-copy in at least 90% of those species
 
-An optional `orthodb_min_proteins` parameter can be used to force the pipeline to discard genomes with fewer than `orthodb_min_proteins` proteins. This is useful because downstream pipelines, such as the MGnify Genomes Catalogue Pipeline, cannot process genomes with insufficient gene evidence. This is because BRAKER, for example, runs AUGUSTUS, which crashes when the protein evidence file contains too little information to train the model used for predictions ([details in this issue](https://github.com/Gaius-Augustus/BRAKER/issues/8)).
+   The search stops at the first rank that returns any groups. If the samplesheet sets an
+   `orthodb` rank, the search stops there instead, even when nothing has been found. Genomes that
+   match no rank are listed in `no_orthodb_taxon.csv` and get no OrthoDB output. The resolved taxid is written to `<sample_id>_taxon.txt`, and its clusters (orthologous group ids with their gene counts) to `<sample_id>_clusters.tsv`. `--max_orthodb_clusters` limits how many clusters are kept, which is mostly useful for testing.
+
+3. **Fetch the protein sequences for each taxon** (once per unique taxon).
+   The cluster ids are looked up in the [local OrthoDB database](#building-the-orthodb-database), which links each cluster to its protein sequences. All the matching proteins are collected into `combined_orthodb_<taxid>.faa`.
+
+   With `--orthodb_min_proteins` set, the pipeline first counts the taxon's proteins and drops the
+   taxon if it has fewer than the threshold. The count is per taxon, so every genome that resolved
+   to that taxon is dropped and listed in `low_protein_genomes.csv`. This matters for downstream
+   pipelines that can't handle genomes with too little gene evidence, such as the MGnify Genomes
+   Catalogue Pipeline. BRAKER, for example, runs AUGUSTUS, which crashes when the protein evidence
+   is too small to train its prediction model
+   ([details in this issue](https://github.com/Gaius-Augustus/BRAKER/issues/8)).
+
+### Keeping the local database and the API on the same OrthoDB release
+
+The cluster ids from the API and the local database have to come from the
+same OrthoDB release, for example `v12.2`.
+
+**Why.** OrthoDB versions its releases as `<major>.<minor>`, but only the major version is part of
+the API URL (`https://data.orthodb.org/v12/`). That URL always serves the newest minor release of
+v12, and the [data dump](https://data.orthodb.org/v12/download/odb_data_dump/) used to build the
+local database exists only for that release: once `v12.2` is out, the `v12.1` dump is gone.
+Orthologous group ids are not stable between releases either. The same id can be reused for a group
+with different members, and some ids disappear. If the database is from a different release than the
+API, the cluster ids still look valid, but their lookup can quietly return the wrong proteins or
+none at all, and nothing fails.
+
+**How.** Before running the pipeline, choose which OrthoDB release to use. See https://data.orthodb.org/current/orthodb_release_id for the latest release. If you want to use a particular major version (e.g. v12 or v11), check which release OrthoDB currently serves for it (`https://data.orthodb.org/<version>/orthodb_release_id`).
+
+If you already have the required OrthoDB database built locally, provide it with `--orthodb_db` and its release with `--orthodb_version`. Before any cluster is queried, the pipeline checks the provided parameters against the OrthoDB API. If `--orthodb_version` is not the served release, or the database given with `--orthodb_db` records an older release than the served one, the pipeline fails.
+
+To build the database during the pipeline run, leave `--orthodb_db` unset and set `--orthodb_version` to the served release (or `current`).
+
+See [Building the OrthoDB database](#building-the-orthodb-database) for where databases are kept and
+how to build one ahead of a run.
 
 ## Step 3. UniProt
 
@@ -72,11 +112,22 @@ Filter only runs which contribute >= 1% unique kmers mapped to the genome in the
 
 # Usage
 
+Typical pipeline commands:
+<!-- TODO: check this commands -->
+```
+#   run datascout reusing orthodb_db/v12.2/orthodb.duckdb, fails if v12.2 is no longer served by OrthoDB API
+nexflow run main.nf --outdir results/ --samplesheet input.csv --orthodb_db orthodb_db/v12.2/orthodb.duckdb --orthodb_version v12.2
+
+#   run datascout and build the v12.2 OrthoDB database to use, fails if v12.2 is no longer served by OrthoDB API
+nexflow run main.nf --outdir results/ --samplesheet input.csv --orthodb_version v12.2
+
+#   run datascout, build the OrthoDB database of the latest release, skip Rfam calling and download of transcriptomic read runs
+nexflow run main.nf --outdir results/ --samplesheet input.csv --orthodb_version current --download_rna_fastq false --skip_rfam
+```
+
 Pipeline help:
 
 ```angular2html
-Typical pipeline command:
-
 USAGE:
   nextflow run main.nf --samplesheet <file> [options]
 
@@ -94,6 +145,20 @@ DATABASE OPTIONS:
                           Used for taxonomic lineage parsing.
   --sqlite <dir>          Path to NCBI sqlite database. Will be downloaded if not provided.
                           Used for taxonomic lineage parsing.
+                          <!-- TODO: make sure this is updated -->
+  --orthodb_db <file>     Full path to an existing OrthoDB database (orthodb.duckdb), reused
+                          as-is when it holds the release OrthoDB currently serves; the run
+                          fails when it's older. Unset by default, so every run builds its
+                          own OrthoDB database.
+  --orthodb_version <str> OrthoDB release of the input OrthoDB or OrthoDB to generate, for example
+                          v12.2, or current for the latest release. The run fails when it isn't
+                          the release OrthoDB currently serves. [default: v12.2]
+  --orthodb_og2genes <file>, --orthodb_og_aa_fasta <file>
+                          Dump files already on disk. Given together, ORTHODB_GETDB builds from
+                          them instead of downloading them from
+                          https://data.orthodb.org/v12/download/odb_data_dump/. Left unset,
+                          building a database downloads both files fresh, about 39 GB, which
+                          can take a while.
   --rfam_db <file>        Path to the latest available public Rfam database connection config.
                           [default: ${projectDir}/assets/rfam_db.txt]
                           Used for RNA family searches.
@@ -114,12 +179,61 @@ PROCESSING OPTIONS:
   --swissprot             Use SwissProt database only.
                           Restricts UniProt searches to manually curated entries. [default: false]
   --orthodb_min_proteins <int> Minimum number of OrthoDB proteins required to keep a
-                          genome, counted in combined_orthodb_<taxid>.faa. Samples below
+                          genome, counted per resolved taxon. Genomes whose taxon is below
                           the threshold produce no orthodb_dir and are listed in
                           low_protein_genomes.csv. [default: 0 (filter disabled)]
   --skip_rfam             Skip the Rfam accessions retrieval step.
                           When enabled, the pipeline will not query Rfam and no
                           rfam_dir output is produced. [default: false]
+```
+
+# Building the OrthoDB database
+
+The pipeline requires DuckDB SQL database generated out of two files of the
+[OrthoDB data dump](https://data.orthodb.org/v12/download/odb_data_dump/), `odb*_OG2genes.tab.gz`,
+which maps orthologous groups to gene ids, and `odb*_og_aa_fasta.gz`, which holds the protein
+sequences. This DuckDB database is generated by ORTHODB_GETDB module.
+
+The database holds three tables: `og2genes` maps orthologous groups to gene ids, `proteins` holds
+one sequence per gene id, and `meta` records the OrthoDB release it was built from, `v12.2`.
+
+If `--orthodb_db` is provided, the release recorded in that database's `meta` table is checked:
+it's reused as-is when it is the release OrthoDB currently serves, and the run fails otherwise.
+When `--orthodb_db` is not set, a fresh database of `--orthodb_version` is built during the
+pipeline run and used to collect protein evidence. Building one downloads both
+dump files fresh unless `--orthodb_og2genes`/`--orthodb_og_aa_fasta` are given, about 39 GB, so a
+run that needs to build can take a while.
+
+A freshly built database is copied to `<outdir>/orthodb_db/<release>/orthodb.duckdb` by default.
+It is recommended to point ORTHODB_GETDB's `publishDir` at a shared reference databases folder, so
+all versions of OrthoDB are stored in one place and ready to be passed with `--orthodb_db` in
+later runs:
+
+```
+process {
+      withName: ORTHODB_GETDB {
+        publishDir = [
+            path: "/path/to/ref-dbs/orthodb",
+            mode: 'copy',
+            pattern: "*/orthodb.duckdb"
+        ]
+    }
+}
+```
+
+To build or validate the database yourself, rather than inside a pipeline run:
+
+```bash
+#   check orthodb_db/v12.2/orthodb.duckdb still holds the release served by OrthoDB API, fails otherwise
+python3 bin/orthodb_getdb.py --release v12.2 --db_dir orthodb_db --input orthodb_db/v12.2/orthodb.duckdb
+
+#   download both dump files and build the database fresh, about 39 GB of downloads
+python3 bin/orthodb_getdb.py --release v12.2 --db_dir orthodb_db --download_dir /path/to/dump
+
+#   or build from files already on disk
+python3 bin/orthodb_getdb.py --release v12.2 --db_dir orthodb_db \
+    --og2genes /path/to/odb12v2_OG2genes.tab.gz \
+    --og_aa_fasta /path/to/odb12v2_og_aa_fasta.gz
 ```
 
 # Samplesheet

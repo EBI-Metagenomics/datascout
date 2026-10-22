@@ -1,0 +1,34 @@
+nextflow_process {
+
+    name "Test Process ASSIGN_ORTHODB_FASTA"
+    script "modules/local/assign_orthodb_fasta/main.nf"
+    process "ASSIGN_ORTHODB_FASTA"
+    tag "module"
+    tag "assign_orthodb_fasta"
+
+    test("Should materialize the per-genome orthodb_dir from a shared per-taxon FASTA") {
+
+        when {
+            process {
+                """
+                input[0] = tuple(
+                    [id:"test_sample1", genome_id:"GCA_003719455.1", ena_tax:"default"],
+                    "5204",
+                    file("$projectDir/tests/reference_databases/mock_combined_orthodb.faa")
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            def outdir = file(process.out.orthodb_results.get(0).get(1))
+            assert outdir.name == "test_sample1_orthodb_dir"
+            def expected = file("${outdir}/5204_sequences/combined_orthodb_5204.faa")
+            assert expected.exists()
+            assert expected.text == file("$projectDir/tests/reference_databases/mock_combined_orthodb.faa").text
+        }
+
+    }
+
+}
