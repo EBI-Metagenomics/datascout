@@ -25,7 +25,7 @@ Uses NCBI taxdump to construct taxonomic lineages using [ete toolkit](https://gi
 Collects orthologous protein sequences from [OrthoDB](https://www.orthodb.org) for each genome. The cluster ids
 come from the OrthoDB API, but the sequences themselves are read from a
 [local OrthoDB database](#building-the-orthodb-database), which is much faster than downloading
-clusters one by one from the API. The step runs in four parts:
+clusters one by one from the API. The step runs in two parts:
 
 1. **Query the OrthoDB API** (once per input genome). The pipeline goes through the
    genome's taxonomic lineage from Step 1, starting with the most specific rank. At each rank it

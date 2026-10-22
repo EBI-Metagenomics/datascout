@@ -11,7 +11,7 @@ process BUILD_ORTHODB_FASTA {
 
     input:
       tuple val(taxid), path(clusters_file)
-      val(orthodb_db)
+      path(orthodb_db)
       val(min_proteins)
 
     output:

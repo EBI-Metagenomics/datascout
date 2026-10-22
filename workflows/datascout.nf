@@ -82,8 +82,11 @@ workflow DATASCOUT {
         orthodb_db = ORTHODB_GETDB.out.new_db.ifEmpty(input_orthodb_db)
         ch_versions = ch_versions.mix(ORTHODB_GETDB.out.versions)
 
+        // use this as trigger to make sure API in only queried once ORTHODB_GETDB has approved the release
+        approved_orthodb_version = ORTHODB_GETDB.out.versions.map { _versions -> params.orthodb_version }
+
         // resolve which OrthoDB taxon each genome maps to, and list that taxon's clusters
-        RESOLVE_ORTHODB_TAXON(joined_orthodb, params.max_orthodb_clusters, params.orthodb_version)
+        RESOLVE_ORTHODB_TAXON(joined_orthodb, params.max_orthodb_clusters, approved_orthodb_version)
         ch_versions = ch_versions.mix(RESOLVE_ORTHODB_TAXON.out.versions.first())
 
         // trace genomes for which no OrthoDB taxon could be resolved at any lineage rank
