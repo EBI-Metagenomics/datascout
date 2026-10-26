@@ -115,8 +115,8 @@ Filter only runs which contribute >= 1% unique kmers mapped to the genome in the
 Typical pipeline commands:
 <!-- TODO: check this commands -->
 ```
-#   run datascout reusing orthodb_db/v12.2/orthodb.duckdb, fails if v12.2 is no longer served by OrthoDB API
-nexflow run main.nf --outdir results/ --samplesheet input.csv --orthodb_db orthodb_db/v12.2/orthodb.duckdb --orthodb_version v12.2
+#   run datascout reusing orthodb_db/v12.2/orthodb_v12.2.duckdb, fails if v12.2 is no longer served by OrthoDB API
+nexflow run main.nf --outdir results/ --samplesheet input.csv --orthodb_db orthodb_db/v12.2/orthodb_v12.2.duckdb --orthodb_version v12.2
 
 #   run datascout and build the v12.2 OrthoDB database to use, fails if v12.2 is no longer served by OrthoDB API
 nexflow run main.nf --outdir results/ --samplesheet input.csv --orthodb_version v12.2
@@ -146,7 +146,7 @@ DATABASE OPTIONS:
   --sqlite <dir>          Path to NCBI sqlite database. Will be downloaded if not provided.
                           Used for taxonomic lineage parsing.
                           <!-- TODO: make sure this is updated -->
-  --orthodb_db <file>     Full path to an existing OrthoDB database (orthodb.duckdb), reused
+  --orthodb_db <file>     Full path to an existing OrthoDB database (orthodb_<release>.duckdb)
                           as-is when it holds the release OrthoDB currently serves; the run
                           fails when it's older. Unset by default, so every run builds its
                           own OrthoDB database.
@@ -204,7 +204,7 @@ pipeline run and used to collect protein evidence. Building one downloads both
 dump files fresh unless `--orthodb_og2genes`/`--orthodb_og_aa_fasta` are given, about 39 GB, so a
 run that needs to build can take a while.
 
-A freshly built database is copied to `<outdir>/orthodb_db/<release>/orthodb.duckdb` by default.
+A freshly built database is copied to `<outdir>/orthodb_db/<release>/orthodb_<release>.duckdb` by default.
 It is recommended to point ORTHODB_GETDB's `publishDir` at a shared reference databases folder, so
 all versions of OrthoDB are stored in one place and ready to be passed with `--orthodb_db` in
 later runs:
@@ -215,7 +215,7 @@ process {
         publishDir = [
             path: "/path/to/ref-dbs/orthodb",
             mode: 'copy',
-            pattern: "*/orthodb.duckdb"
+            pattern: "*/orthodb_*.duckdb"
         ]
     }
 }
@@ -224,8 +224,8 @@ process {
 To build or validate the database yourself, rather than inside a pipeline run:
 
 ```bash
-#   check orthodb_db/v12.2/orthodb.duckdb still holds the release served by OrthoDB API, fails otherwise
-python3 bin/orthodb_getdb.py --release v12.2 --db_dir orthodb_db --input orthodb_db/v12.2/orthodb.duckdb
+#   check orthodb_db/v12.2/orthodb_v12.2.duckdb still holds the release served by OrthoDB API, fails otherwise
+python3 bin/orthodb_getdb.py --release v12.2 --db_dir orthodb_db --input orthodb_db/v12.2/orthodb_v12.2.duckdb
 
 #   download both dump files and build the database fresh, about 39 GB of downloads
 python3 bin/orthodb_getdb.py --release v12.2 --db_dir orthodb_db --download_dir /path/to/dump

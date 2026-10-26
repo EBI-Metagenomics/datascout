@@ -162,8 +162,7 @@ def main():
         holds the release OrthoDB API currently serves"""
     )
     parser.add_argument(
-        "-o", "--output", type=Path, default="orthodb.duckdb",
-        help="Filename the database is built as [default: orthodb.duckdb]"
+        "-o", "--output", type=str, help="Filename for the newly build database [default: orthodb_<release>.duckdb]"
     )
     parser.add_argument(
         "--release", type=str, required=True, help="""OrthoDB release requested, e.g. v12.2, or
@@ -218,7 +217,7 @@ def main():
         print(args.input.resolve())
         return
 
-    canonical_db = args.db_dir / release / args.output.name
+    canonical_db = args.db_dir / release / Path(args.output or f"orthodb_{release}.duckdb").name
 
     #   an earlier run may already have built the very release this one now needs
     if canonical_db.exists():
