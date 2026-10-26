@@ -27,13 +27,6 @@ def dump_release(orthodb_db):
         return con.execute("SELECT release FROM meta").fetchone()[0]
 
 
-CLUSTER_PROTEINS = """
-    SELECT proteins.gene_id, proteins.seq
-    FROM og2genes JOIN proteins USING (gene_id)
-    WHERE og2genes.og_id IN (SELECT * FROM UNNEST(?))
-"""
-
-
 def connect(orthodb_db, threads=None, memory=None, temp_directory="."):
     """Open the database within the resources the task was given. Duckdb otherwise sizes itself
     from the whole machine, and under a scheduler it is killed rather than spilling to disk"""
@@ -43,6 +36,14 @@ def connect(orthodb_db, threads=None, memory=None, temp_directory="."):
     if memory:
         config["memory_limit"] = memory
     return duckdb.connect(orthodb_db, read_only=True, config=config)
+
+
+#   proteins of the given clusters, shared by count_proteins and write_combined_fa
+CLUSTER_PROTEINS = """
+    SELECT proteins.gene_id, proteins.seq
+    FROM og2genes JOIN proteins USING (gene_id)
+    WHERE og2genes.og_id IN (SELECT * FROM UNNEST(?))
+"""
 
 
 def count_proteins(clusters, orthodb_db, threads=None, memory=None):
