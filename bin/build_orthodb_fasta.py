@@ -6,7 +6,13 @@ import duckdb
 
 
 def parse_clusters(clusters_file):
-    """cluster ids listed by resolve_orthodb_taxon.py, one per line after the header"""
+    """cluster ids listed by resolve_orthodb_taxon.py, one per line after the header. The file
+    is tab separated, for example:
+
+        cluster_id	gene_count
+        2839at5690	16
+        4358at5690	15
+    """
     with open(clusters_file, 'r') as clusters:
         header = clusters.readline()
         if not header.startswith("cluster_id"):
@@ -63,17 +69,18 @@ def main():
         description="Compose the combined protein fasta of one OrthoDB taxon from a local OrthoDB database"
     )
     parser.add_argument(
-        "--taxid", type=str, help="OrthoDB taxon the clusters were resolved to"
+        "--taxid", type=str, help="NCBI taxid of the OrthoDB taxon the clusters were resolved to, e.g. 5690"
     )
     parser.add_argument(
         "--clusters_file", type=str, help="Cluster list written by resolve_orthodb_taxon.py"
     )
     parser.add_argument(
-        "-o", "--output", type=str, help="Combined fasta file to write"
+        "-o", "--output", type=str, help="""Full name of the combined fasta file to write, e.g.
+        combined_orthodb_5690.faa (not a prefix)"""
     )
     parser.add_argument(
-        "--orthodb_db", type=str, default="", help="""Path to the OrthoDB database built by
-        ORTHODB_GETDB, the source of the protein sequences"""
+        "--orthodb_db", type=str, default="", help="""Path to the OrthoDB DuckDB database file
+        (orthodb.duckdb) built by ORTHODB_GETDB, the source of the protein sequences"""
     )
     parser.add_argument(
         "--threads", type=int, default=None, help="Cores the task was allocated"
@@ -85,7 +92,7 @@ def main():
     parser.add_argument(
         "--min_proteins", type=int, default=0, help="""Minimum number of proteins required to keep the
         taxon. Below it no fasta is produced and the taxon is traced in low_proteins.csv, which drops
-        every genome that resolved to it"""
+        every genome that resolved to it. [default: 0, no filtering: the fasta is always written]"""
     )
     parser.add_argument(
         "--version", action="store_true", help="Show orthodb version number and exit"
