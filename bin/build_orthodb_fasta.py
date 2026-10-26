@@ -6,7 +6,8 @@ import duckdb
 
 
 def parse_clusters(clusters_file):
-    """cluster ids listed by resolve_orthodb_taxon.py, one per line after the header. The file
+    """
+    Cluster ids listed by resolve_orthodb_taxon.py, one per line after the header. The file
     is tab separated, for example:
 
         cluster_id	gene_count
@@ -69,18 +70,17 @@ def main():
         description="Compose the combined protein fasta of one OrthoDB taxon from a local OrthoDB database"
     )
     parser.add_argument(
-        "--taxid", type=str, help="NCBI taxid of the OrthoDB taxon the clusters were resolved to, e.g. 5690"
+        "--taxid", type=str, help="NCBI taxid of the OrthoDB taxon the clusters were resolved to"
     )
     parser.add_argument(
         "--clusters_file", type=str, help="Cluster list written by resolve_orthodb_taxon.py"
     )
     parser.add_argument(
-        "-o", "--output", type=str, help="""Full name of the combined fasta file to write, e.g.
-        combined_orthodb_5690.faa (not a prefix)"""
+        "-o", "--output", type=str, help="Full name of the combined fasta file to write"
     )
     parser.add_argument(
-        "--orthodb_db", type=str, default="", help="""Path to the OrthoDB DuckDB database file
-        (orthodb.duckdb) built by ORTHODB_GETDB, the source of the protein sequences"""
+        "--orthodb_db", type=str, required=True, help="""Path to the OrthoDB DuckDB database file
+        (orthodb_<release>.duckdb) built by ORTHODB_GETDB, the source of the protein sequences"""
     )
     parser.add_argument(
         "--threads", type=int, default=None, help="Cores the task was allocated"
@@ -104,9 +104,6 @@ def main():
         return
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-
-    if not args.orthodb_db:
-        parser.error("--orthodb_db is required")
 
     if not args.taxid or not args.clusters_file or not args.output:
         parser.error("--taxid, --clusters_file and --output are required unless --version is specified")

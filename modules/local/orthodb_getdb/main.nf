@@ -15,7 +15,7 @@ process ORTHODB_GETDB {
       path(og_aa_fasta)
 
     output:
-      path("*/orthodb.duckdb"), emit: new_db, optional: true
+      path("*/orthodb_*.duckdb"), emit: new_db, optional: true
       path("versions.yml"), emit: versions
 
     script:
@@ -24,7 +24,6 @@ process ORTHODB_GETDB {
     """
     db_path=\$(orthodb_getdb.py \\
         --release ${release} \\
-        --output orthodb.duckdb \\
         ${input_arg} \\
         ${dump_args} \\
         --threads ${task.cpus} \\

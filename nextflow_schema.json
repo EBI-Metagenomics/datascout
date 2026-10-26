@@ -58,7 +58,7 @@
         "orthodb_db": {
           "type": "string",
           "format": "file-path",
-          "description": "Full path to an existing OrthoDB database file (orthodb.duckdb) to reuse",
+          "description": "Full path to an existing OrthoDB database file (orthodb_<release>.duckdb) to reuse",
           "help_text": "Full path to an existing OrthoDB database file, reused as-is when it holds --orthodb_version and that is the release OrthoDB currently serves. The pipeline fails when the database is older: unset --orthodb_db to build a fresh one instead. Unset by default, so every run builds its own OrthoDB database. See README for more details.",
           "fa_icon": "fas fa-folder"
         },
