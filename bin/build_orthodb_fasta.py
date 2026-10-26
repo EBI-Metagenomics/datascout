@@ -18,7 +18,7 @@ def parse_clusters(clusters_file):
         header = clusters.readline()
         if not header.startswith("cluster_id"):
             raise ValueError(f"{clusters_file} does not start with the cluster_id header")
-        return [line.split('\t')[0] for line in clusters if line.strip()]
+        return [line.split('\t')[0].strip() for line in clusters if line.strip()]
 
 
 def dump_release(orthodb_db):
