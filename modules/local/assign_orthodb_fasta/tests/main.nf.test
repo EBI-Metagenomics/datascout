@@ -5,6 +5,7 @@ nextflow_process {
     process "ASSIGN_ORTHODB_FASTA"
     tag "module"
     tag "assign_orthodb_fasta"
+    tag "ci"
 
     test("Should materialize the per-genome orthodb_dir from a shared per-taxon FASTA") {
 
