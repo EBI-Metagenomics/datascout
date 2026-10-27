@@ -162,7 +162,7 @@ def main():
         holds the release OrthoDB API currently serves"""
     )
     parser.add_argument(
-        "-o", "--output", type=str, help="Filename for the newly build database [default: orthodb_<release>.duckdb]"
+        "-o", "--output", type=str, help="Filename for the newly built database [default: orthodb_<release>.duckdb]"
     )
     parser.add_argument(
         "--release", type=str, required=True, help="""OrthoDB release requested, e.g. v12.2, or
